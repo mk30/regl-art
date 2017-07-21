@@ -57,7 +57,7 @@ function phone (regl){
         return rmat
       }
     },
-    primitive: "triangles",
+    primitive: "lines",
     blend: {
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
