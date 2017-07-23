@@ -52,7 +52,6 @@ const drawCone = regl({
       var theta = context.tick/60
       return mat4.rotateX(rmat, mat4.identity(rmat), theta)
     }
-    
   },
   primitive: "points"
 })
