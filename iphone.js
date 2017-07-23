@@ -6,7 +6,7 @@ var mesh = require('./iphonefiles/phone.json')
 
 var camera = require('regl-camera')(regl, {
   center: [0, 6, 0],
-  distance: 30,
+  distance: 20,
   theta: 0.3,
   phi: 0.4
 })
@@ -19,12 +19,12 @@ function phone (regl){
       varying vec3 vnormal, vpos;
       uniform float t;
       void main () {
-        vec3 p = vnormal+0.5 / snoise(vec4(vpos*0.01,sin(t)+20.5));
+        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
         float cross = abs(max(
-          max(sin(p.z*10.0), sin(p.y*01.0)),
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
           sin(p.x*10.0)
           ));
-        gl_FragColor = vec4(p, 1);
+        gl_FragColor = vec4(p*cross, 1);
       }`,
     vert: glsl`
       precision mediump float;
@@ -37,6 +37,7 @@ function phone (regl){
         vpos = position;
         gl_Position = projection * view * model *
         vec4(position, 1.0);
+        gl_PointSize = 10.0*sin(t);
       }`,
     attributes: {
       position: mesh.positions,
@@ -57,7 +58,7 @@ function phone (regl){
         return rmat
       }
     },
-    primitive: "lines",
+    primitive: "triangles",
     blend: {
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
