@@ -1,7 +1,7 @@
 var glsl = require('glslify')
 var regl = require('regl')()
 var camera = require('./libraries/camera.js')(regl, {
-  distance: 4, 
+  distance: 15, 
   far: 5000,
   center: [0, 0.25, 0]
 })
@@ -26,10 +26,10 @@ function makecatmug (regl) {
       precision mediump float;
       #pragma glslify: snoise = require('glsl-noise/simplex/3d')
       varying vec3 vpos, vnorm;
-      uniform float time;
+      uniform float time, timeoffset;
       void main () {
         float c = snoise(sin(vnorm*3.5));
-        float d = vpos.y*2.0-6.0*
+        float d = vpos.y*2.0+timeoffset-6.0*
           pow(abs(sin(time)), 0.7);
         float e = step(c, d)*4.0; 
         gl_FragColor = vec4(vec3(0.1,1.0,0.01)*e,1.0);
@@ -39,7 +39,8 @@ function makecatmug (regl) {
       precision mediump float;
       #pragma glslify: snoise = require('glsl-noise/simplex/3d')
       uniform mat4 projection, view, model;
-      uniform float time;
+      uniform vec3 offset;
+      uniform float time, timeoffset;
       attribute vec3 position, normal;
       varying vec3 vnorm, vpos, dvpos;
       void main () {
@@ -56,8 +57,8 @@ function makecatmug (regl) {
           (vec3(dx,0,dz)
           + vec3(0,position.y/2.0-0.03*sin(time*2.0),position.z/12.0
           + 0.3*sin(time)));
-        gl_Position = projection * view * model *
-        vec4(dvpos,1);
+        gl_Position = projection * view * (model *
+        vec4(dvpos,1)+vec4(offset,0));
       }
     `,
     attributes: {
@@ -68,10 +69,13 @@ function makecatmug (regl) {
       texture: feedBackTexture,
       model: function (context) {
         var theta = context.time
-        mat4.rotateY(model, mat4.identity(model), Math.sin(theta))
+        mat4.identity(model)
+        mat4.rotateY(model, model, Math.sin(theta))
         return model
       },
-      time: regl.context('time')
+      time: regl.context('time'),
+      offset: regl.prop('offset'),
+      timeoffset: regl.prop('timeoffset')
     },
     primitive: "triangles",
     blend: {
@@ -136,11 +140,18 @@ var draw = {
   bg: bg(regl),
   catmug: makecatmug(regl)
 }
+var batch = []
+for (var i=0; i<5; i++){
+  var x = (Math.random()*2-1)*5
+  var y = (Math.random()*2-1)*5
+  var z = (Math.random()*2-1)*5
+  batch.push({offset: [x,y,z], timeoffset: i})
+}
 regl.frame(function (context) {
   regl.clear({ color: [0,0,0,1], depth: true })
   drawfb({ texture: tex })
   camera(function () {
-    draw.catmug()
+    draw.catmug(batch)
     tex({ copy: true, min: 'linear', mag: 'linear' })
     draw.bg()
   })
