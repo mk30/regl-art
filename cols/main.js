@@ -179,13 +179,14 @@ function bg (regl) {
 }
 var draw = {
   bg: bg(regl),
-  col: col
+  col: col,
+  pyramid: pyramid
 }
 regl.frame(function () {
   regl.clear({ color: [0.9,0.9,0.9,1] })
   camera(function () {
     draw.bg()
     draw.col(batch)
-    //pyramid({ location: [-500,0,0] })
+    draw.pyramid({ location: [-500,0,0] })
   })
 })
