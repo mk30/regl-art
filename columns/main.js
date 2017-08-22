@@ -1,10 +1,8 @@
 var regl = require('regl')()
 var camera = require('regl-camera')(regl,
   { distance: 10 })
-var icosphere = require('icosphere')
 var anormals = require('angle-normals')
 var glsl = require('glslify')
-var sphere = icosphere(5)
 var column = require('column-mesh')
 
 function jelly (regl) {
@@ -45,8 +43,8 @@ function jelly (regl) {
         float y = max(sin(position.z*q),cos(position.y*q));
         vpos = position
           + normal * ty * snoise(vec4(position*0.5,tt)) * 0.05
-          + vec3(0,y*0.1,0)
-          + vec3(sin(t*0.5+y),0,cos(t*0.5+y))*ty/q*0.2;
+          + vec3(0,0,0)
+          + vec3(sin(t*0.5+y),y*2.0+cos(t),cos(t*0.5+y))*ty/q*0.2;
         vnorm = normal;
         vec3 p = offset+vpos + vec3(
           sin(tt*0.2)*2.0,
