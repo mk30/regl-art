@@ -9,8 +9,7 @@ var camera = require('regl-camera')(regl, {
 })
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
-var mat0 = [], v0 = []
-
+var mat0 = [], v0 = [], pmat = []
 var mesh = column({ radius: 2, height: 20 })
 var col = fromMesh(mesh)
 
@@ -26,6 +25,51 @@ for (var i = 0; i < 10; i++) {
     { location: [-400,0,i*30+60] },
     { location: [-400,0,-i*30-60] }
   )
+}
+var planeMesh = {
+  positions: [[-1,0,1],[1,0,1],[1,0,-1],[-1,0,-1]],
+  cells: [[0,1,2],[2,3,0]]
+}
+function plane (regl) {
+  return regl({
+    frag: `
+      precision mediump float;
+      varying vec3 vnormal, vpos;
+      varying float vtime;
+      vec3 hsl2rgb(in vec3 hsl) {
+        vec3 rgb = clamp(abs(mod(hsl.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
+        return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
+      }
+      void main () {
+        vec3 c = vec3 (0,0,1); 
+        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+      }
+    `,
+    vert: `
+      precision mediump float;
+      uniform mat4 projection, view;
+      uniform float time;
+      uniform vec3 location;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      varying float vtime;
+      void main () {
+        vnormal = normal;
+        vtime = time;
+        vpos = vec3 (position.x*500.0, position.y*30.0-11.0, position.z*25.0);
+        gl_Position = projection * view * vec4(vpos + location, 1.0);
+      }
+    `,
+    attributes: {
+      position: planeMesh.positions,
+      normal: normals(planeMesh.cells, planeMesh.positions)
+    },
+    uniforms: {
+      time: regl.context('time'),
+      location: regl.prop('location')
+    },
+    elements: planeMesh.cells
+  })
 }
 
 var pyramid = fromPyramid({
@@ -99,7 +143,7 @@ function fromPyramid (mesh) {
           sin(vtime/20.0 + sin(vnormal * 6.2))
           + sin(vtime + vpos.x/200.0 + vpos.z/300.0)
         ) + vec3(0,0,2));
-        c.y = 1.0;
+        c.y = 0.5;
         c.z = sin(length(vpos)/4.0) * 0.5;
         gl_FragColor = vec4(hsl2rgb(c), 1.0);
       }
@@ -180,13 +224,15 @@ function bg (regl) {
 var draw = {
   bg: bg(regl),
   col: col,
-  pyramid: pyramid
+  pyramid: pyramid,
+  plane: plane(regl)
 }
 regl.frame(function () {
   regl.clear({ color: [0.9,0.9,0.9,1] })
   camera(function () {
     draw.bg()
     draw.col(batch)
-    draw.pyramid({ location: [-500,0,0] })
+    //draw.pyramid({ location: [-500,0,0] })
+    draw.plane({ location: [-500,0,0] })
   })
 })
