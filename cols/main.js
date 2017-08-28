@@ -32,8 +32,8 @@ var planeMesh = {
 }
 function plane (regl) {
   return regl({
-    frag: `
-      precision mediump float;
+    frag: glsl`
+      precision highp float;
       varying vec3 vnormal, vpos;
       varying float vtime;
       vec3 hsl2rgb(in vec3 hsl) {
@@ -45,19 +45,21 @@ function plane (regl) {
         gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
       }
     `,
-    vert: `
-      precision mediump float;
+    vert: glsl`
+      #pragma glslify: snoise = require('glsl-noise/simplex/3d')
+      precision highp float;
       uniform mat4 projection, view;
       uniform float time;
       uniform vec3 location;
       attribute vec3 position, normal;
-      varying vec3 vnormal, vpos;
+      varying vec3 vnormal, vpos, dvpos;
       varying float vtime;
       void main () {
         vnormal = normal;
         vtime = time;
+        float dx = 2.0*sin(snoise(position+time));
         vpos = vec3 (position.x*500.0, position.y*30.0-11.0, position.z*25.0);
-        gl_Position = projection * view * vec4(vpos + location, 1.0);
+        gl_Position = projection * view * vec4(vpos + dx + location, 1.0);
       }
     `,
     attributes: {
