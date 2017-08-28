@@ -2,6 +2,7 @@ var column = require('column-mesh')
 var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
+var planeMesh = require("grid-mesh")(100, 100)
 var camera = require('regl-camera')(regl, {
   center: [-400,0,0],
   eye: [0,0,1],
@@ -26,23 +27,18 @@ for (var i = 0; i < 10; i++) {
     { location: [-400,0,-i*30-60] }
   )
 }
-var planeMesh = {
-  positions: [[-1,0,1],[1,0,1],[1,0,-1],[-1,0,-1]],
-  cells: [[0,1,2],[2,3,0]]
-}
 function plane (regl) {
   return regl({
     frag: glsl`
       precision highp float;
-      varying vec3 vnormal, vpos;
-      varying float vtime;
+      uniform float time;
       vec3 hsl2rgb(in vec3 hsl) {
         vec3 rgb = clamp(abs(mod(hsl.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
         return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
       }
       void main () {
-        vec3 c = vec3 (0,0,1); 
-        gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        vec3 c = hsl2rgb(vec3 (0.6,0.6*sin(time),0.5)); 
+        gl_FragColor = vec4(c, 0.5);
       }
     `,
     vert: glsl`
@@ -50,16 +46,16 @@ function plane (regl) {
       precision highp float;
       uniform mat4 projection, view;
       uniform float time;
-      uniform vec3 location;
-      attribute vec3 position, normal;
-      varying vec3 vnormal, vpos, dvpos;
+      uniform vec2 location;
+      attribute vec2 position, normal;
+      varying vec2 vnormal, vpos, dvpos;
       varying float vtime;
       void main () {
         vnormal = normal;
-        vtime = time;
-        float dx = 2.0*sin(snoise(position+time));
-        vpos = vec3 (position.x*500.0, position.y*30.0-11.0, position.z*25.0);
-        gl_Position = projection * view * vec4(vpos + dx + location, 1.0);
+        //float dx = 2.0*sin(snoise(position*time, 0));
+        float x = position.x + location.x;
+        float z = position.y + location.y;
+        gl_Position = projection * view * vec4(x, 0.0, z, 1.0);
       }
     `,
     attributes: {
@@ -73,11 +69,6 @@ function plane (regl) {
     elements: planeMesh.cells
   })
 }
-
-var pyramid = fromPyramid({
-  positions: [[100,0,-100],[100,0,100],[-100,0,100],[-100,0,-100],[0,100,0]],
-  cells: [[0,1,4],[1,2,4],[2,3,4],[0,3,4],[0,1,2],[2,3,0]]
-})
 
 function fromMesh (mesh) {
   return regl({
@@ -226,7 +217,6 @@ function bg (regl) {
 var draw = {
   bg: bg(regl),
   col: col,
-  pyramid: pyramid,
   plane: plane(regl)
 }
 regl.frame(function () {
@@ -234,7 +224,6 @@ regl.frame(function () {
   camera(function () {
     draw.bg()
     draw.col(batch)
-    //draw.pyramid({ location: [-500,0,0] })
-    draw.plane({ location: [-500,0,0] })
+    draw.plane({ location: [-300,-10] })
   })
 })
