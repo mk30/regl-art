@@ -2,11 +2,10 @@ var column = require('column-mesh')
 var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
-var planeMesh = require("grid-mesh")(100, 100)
+var planeMesh = require("grid-mesh")(200, 50)
 var camera = require('regl-camera')(regl, {
-  center: [-400,0,0],
-  eye: [0,0,1],
-  distance: 400
+  center: [0,0,0],
+  distance: 25
 })
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
@@ -17,14 +16,14 @@ var col = fromMesh(mesh)
 var batch = []
 for (var i = 0; i < 10; i++) {
   batch.push(
-    { location: [-i*20,0,20] },
-    { location: [-i*20,0,-20] }
+    { location: [i*20-180,0,20] },
+    { location: [i*20-180,0,-20] }
   )
 }
 for (var i = 0; i < 10; i++) {
   batch.push(
-    { location: [-400,0,i*30+60] },
-    { location: [-400,0,-i*30-60] }
+    { location: [-180,0,i*10+40] },
+    { location: [-180,0,-i*10-40] }
   )
 }
 function plane (regl) {
@@ -46,7 +45,7 @@ function plane (regl) {
       precision highp float;
       uniform mat4 projection, view;
       uniform float time;
-      uniform vec2 location;
+      uniform vec3 location;
       attribute vec2 position, normal;
       varying vec2 vnormal, vpos, dvpos;
       varying float vtime;
@@ -54,8 +53,9 @@ function plane (regl) {
         vnormal = normal;
         //float dx = 2.0*sin(snoise(position*time, 0));
         float x = position.x + location.x;
+        float y = 0.0 + location.y;
         float z = position.y + location.y;
-        gl_Position = projection * view * vec4(x, 0.0, z, 1.0);
+        gl_Position = projection * view * vec4(x, y, z, 1.0);
       }
     `,
     attributes: {
@@ -120,63 +120,6 @@ function fromMesh (mesh) {
     elements: mesh.cells
   })
 }
-
-function fromPyramid (mesh) {
-  return regl({
-    frag: `
-      precision mediump float;
-      varying vec3 vnormal, vpos;
-      varying float vtime;
-      vec3 hsl2rgb(in vec3 hsl) {
-        vec3 rgb = clamp(abs(mod(hsl.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
-        return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
-      }
-      void main () {
-        vec3 c = vec3(abs(
-          sin(vtime/20.0 + sin(vnormal * 6.2))
-          + sin(vtime + vpos.x/200.0 + vpos.z/300.0)
-        ) + vec3(0,0,2));
-        c.y = 0.5;
-        c.z = sin(length(vpos)/4.0) * 0.5;
-        gl_FragColor = vec4(hsl2rgb(c), 1.0);
-      }
-    `,
-    vert: `
-      precision mediump float;
-      uniform mat4 projection, view, model;
-      uniform float time;
-      attribute vec3 position, normal;
-      varying vec3 vnormal, vpos;
-      varying float vtime;
-      void main () {
-        vnormal = normal;
-        vtime = time;
-        gl_Position = projection * view * model * vec4(position, 1.0);
-        vpos = vec3(gl_Position);
-      }
-    `,
-    attributes: {
-      position: mesh.positions,
-      normal: normals(mesh.cells, mesh.positions)
-    },
-    uniforms: {
-      model: (context, props) => {
-        var speed = (1+Math.sin(context.time/8 + 16))/2
-        var elev = Math.pow(speed, 4) * 200
-        var theta = context.time * speed * 10
-        mat4.identity(mat0)
-        mat4.translate(mat0, mat0, props.location)
-        vec3.set(v0,0,elev,0)
-        mat4.translate(mat0, mat0, v0)
-        mat4.rotateY(mat0, mat0, theta)
-        return mat0
-      },
-      time: (context) => context.time,
-      location: regl.prop('location')
-    },
-    elements: mesh.cells
-  })
-}
 function bg (regl) {
   return regl({
     frag: glsl`
@@ -224,6 +167,6 @@ regl.frame(function () {
   camera(function () {
     draw.bg()
     draw.col(batch)
-    draw.plane({ location: [-300,-10] })
+    draw.plane({ location: [0,0, -10] })
   })
 })
