@@ -2,10 +2,10 @@ var column = require('column-mesh')
 var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
-var planeMesh = require("grid-mesh")(300, 50)
+var planeMesh = require("grid-mesh")(300, 60)
 var camera = require('regl-camera')(regl, {
   center: [0,0,0],
-  distance: 20
+  distance: 25
 })
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
@@ -31,12 +31,13 @@ function plane (regl) {
     frag: glsl`
       precision highp float;
       uniform float time;
+      varying vec2 vpos;
       vec3 hsl2rgb(in vec3 hsl) {
         vec3 rgb = clamp(abs(mod(hsl.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
         return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
       }
       void main () {
-        vec3 c = hsl2rgb(vec3 (0.6,0.6*sin(time),0.5)); 
+        vec3 c = hsl2rgb(vec3 (vpos.x+sin(time/20.0)+vpos.y,0.9,0.5)); 
         gl_FragColor = vec4(c, 0.5);
       }
     `,
@@ -51,9 +52,10 @@ function plane (regl) {
       varying float vtime;
       void main () {
         vnormal = normal;
-        //float dx = 2.0*sin(snoise(position*time, 0));
+        vpos = position;
+        float dx = snoise(vec3(vpos+(sin(time)+0.5)/0.5, 0));
         float x = position.x + location.x;
-        float y = 0.0 + location.y;
+        float y = 0.0 + location.y+dx;
         float z = position.y + location.z;
         gl_Position = projection * view * vec4(x, y, z, 1.0);
       }
@@ -167,6 +169,6 @@ regl.frame(function () {
   camera(function () {
     draw.bg()
     draw.col(batch)
-    draw.plane({ location: [-250,-10, -25] })
+    draw.plane({ location: [-250,20, -30] })
   })
 })
