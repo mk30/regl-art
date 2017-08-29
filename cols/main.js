@@ -5,19 +5,19 @@ var normals = require('angle-normals')
 var planeMesh = require("grid-mesh")(300, 50)
 var camera = require('regl-camera')(regl, {
   center: [0,0,0],
-  distance: 25
+  distance: 20
 })
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
 var mat0 = [], v0 = [], pmat = []
-var mesh = column({ radius: 2, height: 20 })
+var mesh = column({ radius: 2, height: 25 })
 var col = fromMesh(mesh)
 
 var batch = []
 for (var i = 0; i < 10; i++) {
   batch.push(
-    { location: [i*20-180,0,20] },
-    { location: [i*20-180,0,-20] }
+    { location: [i*20-180,5,20] },
+    { location: [i*20-180,5,-20] }
   )
 }
 for (var i = 0; i < 10; i++) {
