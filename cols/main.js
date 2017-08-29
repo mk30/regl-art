@@ -2,7 +2,7 @@ var column = require('column-mesh')
 var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
-var planeMesh = require("grid-mesh")(200, 50)
+var planeMesh = require("grid-mesh")(300, 50)
 var camera = require('regl-camera')(regl, {
   center: [0,0,0],
   distance: 25
@@ -54,7 +54,7 @@ function plane (regl) {
         //float dx = 2.0*sin(snoise(position*time, 0));
         float x = position.x + location.x;
         float y = 0.0 + location.y;
-        float z = position.y + location.y;
+        float z = position.y + location.z;
         gl_Position = projection * view * vec4(x, y, z, 1.0);
       }
     `,
@@ -167,6 +167,6 @@ regl.frame(function () {
   camera(function () {
     draw.bg()
     draw.col(batch)
-    draw.plane({ location: [0,0, -10] })
+    draw.plane({ location: [-250,-10, -25] })
   })
 })
