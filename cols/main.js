@@ -26,7 +26,7 @@ for (var i = 0; i < 10; i++) {
     { location: [-180,0,-i*10-40] }
   )
 }
-function plane (regl) {
+function roof (regl) {
   return regl({
     frag: glsl`
       precision highp float;
@@ -37,8 +37,8 @@ function plane (regl) {
         return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
       }
       void main () {
-        vec3 c = hsl2rgb(vec3 (vpos.x+sin(time/20.0)+vpos.y,0.9,0.5)); 
-        gl_FragColor = vec4(c, 0.5);
+        vec3 c = hsl2rgb(vec3 (0.2+sin(time/20.0)+cos(vpos.x),0.6,0.5)); 
+        gl_FragColor = vec4(c, 0.7);
       }
     `,
     vert: glsl`
@@ -53,7 +53,7 @@ function plane (regl) {
       void main () {
         vnormal = normal;
         vpos = position;
-        float dx = snoise(vec3(vpos+(sin(time)+0.5)/0.5, 0));
+        float dx = snoise(vec3(vpos+(cos(time)+0.5)/0.5, sin(time + vpos.y)));
         float x = position.x + location.x;
         float y = 0.0 + location.y+dx;
         float z = position.y + location.z;
@@ -122,6 +122,51 @@ function fromMesh (mesh) {
     elements: mesh.cells
   })
 }
+function floor (regl) {
+  return regl({
+    frag: glsl`
+      precision highp float;
+      uniform float time;
+      varying vec2 vpos;
+      vec3 hsl2rgb(in vec3 hsl) {
+        vec3 rgb = clamp(abs(mod(hsl.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
+        return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
+      }
+      void main () {
+        vec3 c = hsl2rgb(vec3 (0.2+sin(time/20.0)+cos(vpos.x),0.6,0.5)); 
+        gl_FragColor = vec4(c, 0.7);
+      }
+    `,
+    vert: glsl`
+      #pragma glslify: snoise = require('glsl-noise/simplex/3d')
+      precision highp float;
+      uniform mat4 projection, view;
+      uniform float time;
+      uniform vec3 location;
+      attribute vec2 position, normal;
+      varying vec2 vnormal, vpos, dvpos;
+      varying float vtime;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        float dx = snoise(vec3(vpos+(cos(time)+0.5)/0.5, sin(time + vpos.y)));
+        float x = position.x + location.x;
+        float y = 0.0 + location.y+dx;
+        float z = position.y + location.z;
+        gl_Position = projection * view * vec4(x, y, z, 1.0);
+      }
+    `,
+    attributes: {
+      position: planeMesh.positions,
+      normal: normals(planeMesh.cells, planeMesh.positions)
+    },
+    uniforms: {
+      time: regl.context('time'),
+      location: regl.prop('location')
+    },
+    elements: planeMesh.cells
+  })
+}
 function bg (regl) {
   return regl({
     frag: glsl`
@@ -162,13 +207,15 @@ function bg (regl) {
 var draw = {
   bg: bg(regl),
   col: col,
-  plane: plane(regl)
+  roof: roof(regl),
+  floor: floor(regl)
 }
 regl.frame(function () {
   regl.clear({ color: [0.9,0.9,0.9,1] })
   camera(function () {
     draw.bg()
     draw.col(batch)
-    draw.plane({ location: [-250,20, -30] })
+    draw.roof({ location: [-250,20, -30] })
+    draw.floor({ location: [-250,-10, -30] })
   })
 })
