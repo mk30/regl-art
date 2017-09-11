@@ -12,6 +12,14 @@ var mat0 = [], v0 = [], pmat = [], rmat = []
 var mesh = column({ radius: 2, height: 25 })
 var col = fromMesh(mesh)
 var golf = require('./golf.json')
+window.addEventListener('mousemove', onmouse)
+window.addEventListener('mousedown', onmouse)
+function onmouse (ev) {
+  camera.onmouse(ev)
+}
+window.addEventListener('wheel', function (ev) {
+  camera.onwheel(ev)
+})
 
 var batch = []
 for (var i = 0; i < 10; i++) {
