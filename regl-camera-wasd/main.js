@@ -7,12 +7,6 @@ var camera = require('./lib/camera.js')({
   distance: 0.7, theta: 1.2, phi: 0.5,
   width: window.innerWidth, height: window.innerHeight
 })
-
-var camera = require('regl-camera')(regl, {
-  center: [0,0,0],
-  distance: 25,
-  far: 500
-})
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
 var mat0 = [], v0 = [], pmat = [], rmat = []
@@ -23,16 +17,17 @@ var golf = require('./golf.json')
 var batch = []
 for (var i = 0; i < 10; i++) {
   batch.push(
-    { location: [i*20-180,5,20] },
-    { location: [i*20-180,5,-20] }
+    Object.assign({}, { location: [i*20-180,5,20] }, camera.props),
+    Object.assign({}, { location: [i*20-180,5,-20] }, camera.props)
   )
 }
 for (var i = 0; i < 10; i++) {
   batch.push(
-    { location: [-180,0,i*10+40] },
-    { location: [-180,0,-i*10-40] }
+    Object.assign({}, { location: [-180,0,i*10+40] }, camera.props),
+    Object.assign({}, { location: [-180,0,-i*10-40] }, camera.props)
   )
 }
+console.log(batch)
 function roof (regl) {
   return regl({
     frag: glsl`
@@ -73,7 +68,9 @@ function roof (regl) {
     },
     uniforms: {
       time: regl.context('time'),
-      location: regl.prop('location')
+      location: regl.prop('location'),
+      projection: regl.prop('projection'),
+      view: regl.prop('view')
     },
     elements: planeMesh.cells
   })
@@ -124,7 +121,9 @@ function fromMesh (mesh) {
         return mat0
       },
       time: regl.context('time'),
-      location: regl.prop('location')
+      location: regl.prop('location'),
+      projection: regl.prop('projection'),
+      view: regl.prop('view')
     },
     elements: mesh.cells
   })
@@ -169,7 +168,9 @@ function floor (regl) {
     },
     uniforms: {
       time: regl.context('time'),
-      location: regl.prop('location')
+      location: regl.prop('location'),
+      projection: regl.prop('projection'),
+      view: regl.prop('view')
     },
     elements: planeMesh.cells
   })
@@ -219,7 +220,9 @@ function dolphin (regl){
         mat4.rotateX(rmat, rmat, -t/2.0)
         mat4.rotateZ(rmat, rmat, t)
         return rmat
-      }
+      },
+      projection: regl.prop('projection'),
+      view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -273,13 +276,14 @@ var draw = {
   floor: floor(regl),
   dolphin: dolphin(regl)
 }
+var roofprops = Object.assign({}, { location: [-250,20, -30] }, camera.props)
+var floorprops = Object.assign({}, { location: [-250,-10, -30] }, camera.props)
 regl.frame(function () {
+  camera.update()
   regl.clear({ color: [0.9,0.9,0.9,1] })
-  camera(function () {
-    draw.bg()
-    draw.col(batch)
-    draw.roof({ location: [-250,20, -30] })
-    draw.floor({ location: [-250,-10, -30] })
-    draw.dolphin()
-  })
+  draw.bg()
+  draw.col(batch)
+  draw.roof(roofprops)
+  draw.floor(floorprops)
+  draw.dolphin(camera.props)
 })
