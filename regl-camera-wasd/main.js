@@ -3,8 +3,7 @@ var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
 var planeMesh = require("grid-mesh")(300, 60)
-var camera = require('./lib/camera.js')({
-  distance: 0.7, theta: 1.2, phi: 0.5,
+var camera = require('./lib/camera.js')({ distance: 0.7, theta: 1.2, phi: 0.5,
   width: window.innerWidth, height: window.innerHeight
 })
 var mat4 = require('gl-mat4')
@@ -27,7 +26,6 @@ for (var i = 0; i < 10; i++) {
     Object.assign({}, { location: [-180,0,-i*10-40] }, camera.props)
   )
 }
-console.log(batch)
 function roof (regl) {
   return regl({
     frag: glsl`
@@ -278,8 +276,9 @@ var draw = {
 }
 var roofprops = Object.assign({}, { location: [-250,20, -30] }, camera.props)
 var floorprops = Object.assign({}, { location: [-250,-10, -30] }, camera.props)
+console.log(camera.props)
 regl.frame(function () {
-  camera.update()
+  camera.update(0.016)
   regl.clear({ color: [0.9,0.9,0.9,1] })
   draw.bg()
   draw.col(batch)
