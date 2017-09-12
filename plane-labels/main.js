@@ -4,12 +4,27 @@ var glsl = require('glslify')
 var normals = require('angle-normals')
 var mesh = require('./box.json')
 var vectorizeText = require('vectorize-text')
-var textMesh = vectorizeText('left', {
+var leftTextMesh = vectorizeText('left', {
   triangles: true,
   width: 4,
   textAlign: 'center',
   textBaseline: 'middle'
 })
+var rightTextMesh = vectorizeText('right', {
+  triangles: true,
+  width: 4,
+  textAlign: 'center',
+  textBaseline: 'middle'
+})
+for (var i=0; i<rightTextMesh.positions.length; i++) {
+  rightTextMesh.positions[i].push(0)
+}
+for (var i=0; i<leftTextMesh.positions.length; i++) {
+  leftTextMesh.positions[i].push(0)
+}
+//concat & offset cells, but just concat positions
+//to concat textmeshes, use updated position.length of all previous items to
+//make one simplicial complex
 
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
@@ -58,9 +73,6 @@ function box (regl){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, -t)
-        //mat4.rotateX(rmat, rmat, -t/2.0)
-        //mat4.rotateZ(rmat, rmat, t)
         return rmat
       }
     },
@@ -74,7 +86,7 @@ function box (regl){
 }
 function text (regl){
   var rmat = []
-  var mesh = textMesh
+  var mesh = rightTextMesh
   return regl({
     frag: `
       precision mediump float;
@@ -85,11 +97,11 @@ function text (regl){
     vert: `
       precision mediump float;
       uniform mat4 model, projection, view;
-      attribute vec2 position;
+      attribute vec3 position;
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(position.x, -position.y, 0, 1.0);
+        vec4(position.x, -position.y, position.z, 1.0);
 
       }`,
     attributes: {
@@ -102,10 +114,7 @@ function text (regl){
          },
       model: function(context, props){
         var theta = context.tick/60
-        mat4.translate(rmat, mat4.identity(rmat), [1,0,0])
-        mat4.rotateY(rmat, rmat, Math.PI/2)
-        mat4.translate(rmat, rmat,
-          [0,Math.sin(context.time)*0.1,Math.sin(context.time*0.1)*0.1])
+        mat4.translate(rmat, mat4.identity(rmat), [0,0,2])
         return rmat
       }
     },
@@ -122,6 +131,6 @@ regl.frame(function() {
   })
   camera(function() {
     draw.box()
-    draw.text()
+    draw.text({})
   })
 })
