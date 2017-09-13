@@ -22,10 +22,18 @@ for (var i=0; i<rightTextMesh.positions.length; i++) {
 for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
 }
-//concat & offset cells, but just concat positions
-//to concat textmeshes, use updated position.length of all previous items to
-//make one simplicial complex
-
+var textMesh = { 
+  positions: leftTextMesh.positions.concat(rightTextMesh.positions),
+  cells: leftTextMesh.cells.slice() 
+}
+rightTextMesh.cells.forEach(function (element){
+  textMesh.cells.push([
+    element[0]+leftTextMesh.cells.length,
+    element[1]+leftTextMesh.cells.length,
+    element[2]+leftTextMesh.cells.length  
+  ])
+})
+console.log(textMesh)
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -86,7 +94,7 @@ function box (regl){
 }
 function text (regl){
   var rmat = []
-  var mesh = rightTextMesh
+  var mesh = textMesh
   return regl({
     frag: `
       precision mediump float;
@@ -131,6 +139,6 @@ regl.frame(function() {
   })
   camera(function() {
     draw.box()
-    draw.text({})
+    draw.text()
   })
 })
