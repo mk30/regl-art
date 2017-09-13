@@ -4,6 +4,7 @@ var glsl = require('glslify')
 var normals = require('angle-normals')
 var mesh = require('./box.json')
 var vectorizeText = require('vectorize-text')
+var meshCombine = require('mesh-combine')
 var leftTextMesh = vectorizeText('left', {
   triangles: true,
   width: 4,
@@ -18,10 +19,13 @@ var rightTextMesh = vectorizeText('right', {
 })
 for (var i=0; i<rightTextMesh.positions.length; i++) {
   rightTextMesh.positions[i].push(0)
+  rightTextMesh.positions[i][2] = rightTextMesh.positions[i][2] - 2 
 }
 for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
 }
+var textMesh = meshCombine([rightTextMesh, leftTextMesh])
+/*
 var textMesh = { 
   positions: leftTextMesh.positions.concat(rightTextMesh.positions),
   cells: leftTextMesh.cells.slice() 
@@ -34,6 +38,7 @@ rightTextMesh.cells.forEach(function (element){
   ])
 })
 console.log(textMesh)
+*/
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
