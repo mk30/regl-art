@@ -25,20 +25,6 @@ for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
 }
 var textMesh = meshCombine([rightTextMesh, leftTextMesh])
-/*
-var textMesh = { 
-  positions: leftTextMesh.positions.concat(rightTextMesh.positions),
-  cells: leftTextMesh.cells.slice() 
-}
-rightTextMesh.cells.forEach(function (element){
-  textMesh.cells.push([
-    element[0]+leftTextMesh.cells.length,
-    element[1]+leftTextMesh.cells.length,
-    element[2]+leftTextMesh.cells.length  
-  ])
-})
-console.log(textMesh)
-*/
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
