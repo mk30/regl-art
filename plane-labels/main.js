@@ -13,16 +13,18 @@ var leftTextMesh = vectorizeText('left', {
 })
 var rightTextMesh = vectorizeText('right', {
   triangles: true,
-  width: 4,
+  width: 6,
   textAlign: 'center',
   textBaseline: 'middle'
 })
 for (var i=0; i<rightTextMesh.positions.length; i++) {
   rightTextMesh.positions[i].push(0)
-  rightTextMesh.positions[i][2] = rightTextMesh.positions[i][2] - 2 
+  //rightTextMesh.positions[i][2] = rightTextMesh.positions[i][2] - 4 
+  rightTextMesh.positions[i][0] = rightTextMesh.positions[i][0] + 6 
 }
 for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
+  leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 4 
 }
 var textMesh = meshCombine([rightTextMesh, leftTextMesh])
 var camera = require('regl-camera')(regl, {
@@ -100,7 +102,7 @@ function text (regl){
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(position.x, -position.y, position.z, 1.0);
+        vec4(position.z, -position.y, -position.x, 1.0);
 
       }`,
     attributes: {
