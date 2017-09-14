@@ -11,16 +11,19 @@ var leftTextMesh = vectorizeText('left', {
   textAlign: 'center',
   textBaseline: 'middle'
 })
-var rightTextMesh = vectorizeText('right', {
+var rightTextMeshSrc = vectorizeText('right', {
   triangles: true,
   width: 6,
   textAlign: 'center',
   textBaseline: 'middle'
 })
-for (var i=0; i<rightTextMesh.positions.length; i++) {
-  rightTextMesh.positions[i].push(0)
-  //rightTextMesh.positions[i][2] = rightTextMesh.positions[i][2] - 4 
-  rightTextMesh.positions[i][0] = rightTextMesh.positions[i][0] + 6 
+var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
+for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
+  rightTextMesh.positions.push([
+    rightTextMeshSrc.positions[i][0]+6,
+    rightTextMeshSrc.positions[i][1],
+    0
+  ])
 }
 for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
