@@ -92,7 +92,6 @@ function box (regl){
            return context.time
          },
       model: function(context, props){
-        var t = context.time
         mat4.identity(rmat)
         return rmat
       }
