@@ -1,8 +1,7 @@
 var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
-var normals = require('angle-normals')
-var mesh = require('./box.json')
+var mesh = require('./axis.json')
 var vectorizeText = require('vectorize-text')
 var meshCombine = require('mesh-combine')
 var leftTextMesh = vectorizeText('left', {
@@ -17,19 +16,47 @@ var rightTextMeshSrc = vectorizeText('right', {
   textAlign: 'center',
   textBaseline: 'middle'
 })
+var frontTextMeshSrc = vectorizeText('front', {
+  triangles: true,
+  width: 6,
+  textAlign: 'center',
+  textBaseline: 'middle'
+})
+var backTextMeshSrc = vectorizeText('back', {
+  triangles: true,
+  width: 6,
+  textAlign: 'center',
+  textBaseline: 'middle'
+})
 var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
 for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
   rightTextMesh.positions.push([
-    rightTextMeshSrc.positions[i][0]+6,
+    rightTextMeshSrc.positions[i][0]+7,
     rightTextMeshSrc.positions[i][1],
     0
   ])
 }
+var frontTextMesh = {positions: [], cells: frontTextMeshSrc.cells}
+for (var i=0; i<frontTextMeshSrc.positions.length; i++) {
+  frontTextMesh.positions.push([
+    0+2,
+    frontTextMeshSrc.positions[i][1],
+    frontTextMeshSrc.positions[i][0]-6
+  ])
+}
+var backTextMesh = {positions: [], cells: backTextMeshSrc.cells}
+for (var i=0; i<backTextMeshSrc.positions.length; i++) {
+  backTextMesh.positions.push([
+    0+2,
+    backTextMeshSrc.positions[i][1],
+    backTextMeshSrc.positions[i][0]+6
+  ])
+}
 for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
-  leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 4 
+  leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 3 
 }
-var textMesh = meshCombine([rightTextMesh, leftTextMesh])
+var textMesh = meshCombine([rightTextMesh, leftTextMesh, backTextMesh, frontTextMesh])
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -42,32 +69,22 @@ function box (regl){
     frag: glsl`
       precision mediump float;
       #pragma glslify: snoise = require('glsl-noise/simplex/4d')
-      varying vec3 vnormal, vpos;
-      uniform float t;
       void main () {
-        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
-        float cross = abs(max(
-          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
-          sin(p.x*10.0)
-          ));
-        gl_FragColor = vec4(p*cross, 1);
+        gl_FragColor = vec4(1,0, 0, 0.5);
       }`,
     vert: glsl`
       precision mediump float;
       uniform mat4 model, projection, view;
-      attribute vec3 position, normal;
-      varying vec3 vnormal, vpos;
+      attribute vec2 position;
+      attribute vec3 normal;
       uniform float t;
       void main () {
-        vnormal = normal;
-        vpos = position;
         gl_Position = projection * view * model *
-        vec4(position, 1.0);
-        gl_PointSize = 10.0*sin(t);
+        vec4(vec3(position.x,0,position.y)+normal, 1.0);
       }`,
     attributes: {
       position: mesh.positions,
-      normal: normals(mesh.cells, mesh.positions)
+      normal: mesh.normals
     },
     elements: mesh.cells,
     uniforms: {
@@ -84,8 +101,7 @@ function box (regl){
     blend: {
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
-    },
-    cull: { enable: true }
+    }
   })
 }
 function text (regl){
