@@ -11,10 +11,10 @@ var leftTextMesh = vectorizeText('left', {
   textBaseline: 'middle'
 })
 var rightTextMeshSrc = vectorizeText('right', {
+  font: 'arial',
   triangles: true,
   width: 6,
-  textAlign: 'center',
-  textBaseline: 'middle'
+  textAlign: 'center'
 })
 var frontTextMeshSrc = vectorizeText('front', {
   triangles: true,
@@ -23,17 +23,17 @@ var frontTextMeshSrc = vectorizeText('front', {
   textBaseline: 'middle'
 })
 var backTextMeshSrc = vectorizeText('back', {
+  font: 'arial',
   triangles: true,
   width: 6,
-  textAlign: 'center',
-  textBaseline: 'middle'
+  textAlign: 'center'
 })
 var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
 for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
   rightTextMesh.positions.push([
     rightTextMeshSrc.positions[i][0]+7,
-    rightTextMeshSrc.positions[i][1],
-    0
+    0,
+    rightTextMeshSrc.positions[i][1]+4
   ])
 }
 var frontTextMesh = {positions: [], cells: frontTextMeshSrc.cells}
@@ -47,16 +47,16 @@ for (var i=0; i<frontTextMeshSrc.positions.length; i++) {
 var backTextMesh = {positions: [], cells: backTextMeshSrc.cells}
 for (var i=0; i<backTextMeshSrc.positions.length; i++) {
   backTextMesh.positions.push([
-    0+2,
-    backTextMeshSrc.positions[i][1],
-    backTextMeshSrc.positions[i][0]+6
+    -backTextMeshSrc.positions[i][1]-4,
+    0,
+    backTextMeshSrc.positions[i][0]+7
   ])
 }
 for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i].push(0)
   leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 3 
 }
-var textMesh = meshCombine([rightTextMesh, leftTextMesh, backTextMesh, frontTextMesh])
+var textMesh = meshCombine([rightTextMesh, backTextMesh])
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -79,7 +79,7 @@ function box (regl){
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(vec3(2.0*position.x,0,2.0*position.y)+normal, 1.0);
+        vec4(vec3(3.0*position.x,0,3.0*position.y)-normal*0.3535, 1.0);
       }`,
     attributes: {
       position: mesh.positions,
@@ -110,7 +110,7 @@ function text (regl){
       precision mediump float;
       uniform float t;
       void main () {
-        gl_FragColor = vec4(0.2, 1.0, 0, 0);
+        gl_FragColor = vec4(0.125,0.192, 0.27, 1.0);
       }`,
     vert: `
       precision mediump float;
@@ -132,7 +132,7 @@ function text (regl){
          },
       model: function(context, props){
         var theta = context.tick/60
-        mat4.translate(rmat, mat4.identity(rmat), [0,0,2])
+        mat4.identity(rmat, rmat)
         return rmat
       }
     },
@@ -145,7 +145,7 @@ var draw = {
 }
 regl.frame(function() {
   regl.clear({
-    color: [0, 0, 0, 1]
+    color: [0.9, 0.9, 0.9, 1]
   })
   camera(function() {
     draw.box()
