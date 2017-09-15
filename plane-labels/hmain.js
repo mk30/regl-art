@@ -1,7 +1,7 @@
 var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
-var mesh = require('./axis.json')
+var mesh = require('./haxis.json')
 var vectorizeText = require('vectorize-text')
 var meshCombine = require('mesh-combine')
 var leftTextMesh = vectorizeText('left', {
@@ -79,7 +79,7 @@ function box (regl){
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(vec3(position.x,0,position.y)+normal, 1.0);
+        vec4(vec3(2.0*position.x,0,2.0*position.y)+normal, 1.0);
       }`,
     attributes: {
       position: mesh.positions,
