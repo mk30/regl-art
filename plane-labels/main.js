@@ -68,9 +68,8 @@ function box (regl){
   return regl({
     frag: glsl`
       precision mediump float;
-      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
       void main () {
-        gl_FragColor = vec4(1,0, 0, 0.5);
+        gl_FragColor = vec4(0.125,0.192, 0.27, 1.0);
       }`,
     vert: glsl`
       precision mediump float;
