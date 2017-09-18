@@ -1,26 +1,14 @@
 var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
-var mesh = require('./axis.json')
+var axis = require('./axis.json')
 var vectorizeText = require('vectorize-text')
 var meshCombine = require('mesh-combine')
-var leftTextMesh = vectorizeText('left', {
-  triangles: true,
-  width: 4,
-  textAlign: 'center',
-  textBaseline: 'middle'
-})
 var rightTextMeshSrc = vectorizeText('right', {
   font: 'arial',
   triangles: true,
   width: 6,
   textAlign: 'center'
-})
-var frontTextMeshSrc = vectorizeText('front', {
-  triangles: true,
-  width: 6,
-  textAlign: 'center',
-  textBaseline: 'middle'
 })
 var backTextMeshSrc = vectorizeText('back', {
   font: 'arial',
@@ -31,33 +19,22 @@ var backTextMeshSrc = vectorizeText('back', {
 var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
 for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
   rightTextMesh.positions.push([
-    rightTextMeshSrc.positions[i][0]+6,
-    -rightTextMeshSrc.positions[i][1]+4,
+    -rightTextMeshSrc.positions[i][0]-6,
+    -rightTextMeshSrc.positions[i][1]-4,
     0
-  ])
-}
-var frontTextMesh = {positions: [], cells: frontTextMeshSrc.cells}
-for (var i=0; i<frontTextMeshSrc.positions.length; i++) {
-  frontTextMesh.positions.push([
-    0+2,
-    frontTextMeshSrc.positions[i][1],
-    frontTextMeshSrc.positions[i][0]-6
   ])
 }
 var backTextMesh = {positions: [], cells: backTextMeshSrc.cells}
 for (var i=0; i<backTextMeshSrc.positions.length; i++) {
   backTextMesh.positions.push([
     0,
-    -backTextMeshSrc.positions[i][1]+4,
-    -backTextMeshSrc.positions[i][0]+6
+    -backTextMeshSrc.positions[i][1]-4,
+    backTextMeshSrc.positions[i][0]+6
   ])
 }
-for (var i=0; i<leftTextMesh.positions.length; i++) {
-  leftTextMesh.positions[i].push(0)
-  leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 3 
-}
 var textMesh = meshCombine([rightTextMesh, backTextMesh])
-console.log(JSON.stringify(textMesh))
+console.log(textMesh)
+//console.log(JSON.stringify(textMesh))
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -83,10 +60,10 @@ function box (regl){
         vec4(vec3(2.0*position.x,0,2.0*position.y)-normal*0.3, 1.0);
       }`,
     attributes: {
-      position: mesh.positions,
-      normal: mesh.normals
+      position: axis.positions,
+      normal: axis.normals
     },
-    elements: mesh.cells,
+    elements: axis.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -105,7 +82,6 @@ function box (regl){
 }
 function text (regl){
   var rmat = []
-  var mesh = textMesh
   return regl({
     frag: `
       precision mediump float;
@@ -124,9 +100,9 @@ function text (regl){
 
       }`,
     attributes: {
-      position: mesh.positions
+      position: textMesh.positions
     },
-    elements: mesh.cells,
+    elements: textMesh.cells,
     uniforms: {
       t: function(context, props){
            return context.tick/1000
