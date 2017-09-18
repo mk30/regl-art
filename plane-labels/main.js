@@ -32,7 +32,7 @@ var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
 for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
   rightTextMesh.positions.push([
     rightTextMeshSrc.positions[i][0]+6,
-    rightTextMeshSrc.positions[i][1]+4,
+    -rightTextMeshSrc.positions[i][1]+4,
     0
   ])
 }
@@ -48,8 +48,8 @@ var backTextMesh = {positions: [], cells: backTextMeshSrc.cells}
 for (var i=0; i<backTextMeshSrc.positions.length; i++) {
   backTextMesh.positions.push([
     0,
-    backTextMeshSrc.positions[i][1]+4,
-    backTextMeshSrc.positions[i][0]+6
+    -backTextMeshSrc.positions[i][1]+4,
+    -backTextMeshSrc.positions[i][0]+6
   ])
 }
 for (var i=0; i<leftTextMesh.positions.length; i++) {
@@ -57,6 +57,7 @@ for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 3 
 }
 var textMesh = meshCombine([rightTextMesh, backTextMesh])
+console.log(JSON.stringify(textMesh))
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -119,7 +120,7 @@ function text (regl){
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(position.z, -position.y, -position.x, 1.0);
+        vec4(position.z, position.y, position.x, 1.0);
 
       }`,
     attributes: {
@@ -152,3 +153,4 @@ regl.frame(function() {
     draw.text()
   })
 })
+process.exit()

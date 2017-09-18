@@ -57,6 +57,7 @@ for (var i=0; i<leftTextMesh.positions.length; i++) {
   leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 3 
 }
 var textMesh = meshCombine([rightTextMesh, backTextMesh])
+console.log(JSON.stringify(textMesh))
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -152,3 +153,4 @@ regl.frame(function() {
     draw.text()
   })
 })
+process.exit()
