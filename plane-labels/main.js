@@ -1,7 +1,7 @@
 var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
-var axis = require('./axis.json')
+var axisSrc = require('./axis.json')
 var vectorizeText = require('vectorize-text')
 var meshCombine = require('mesh-combine')
 var rightTextMeshSrc = vectorizeText('right', {
@@ -33,8 +33,18 @@ for (var i=0; i<backTextMeshSrc.positions.length; i++) {
   ])
 }
 var textMesh = meshCombine([rightTextMesh, backTextMesh])
-console.log(textMesh)
 //console.log(JSON.stringify(textMesh))
+
+var axis = {positions: [], cells: axisSrc.cells, normals:
+axisSrc.normals}
+for (var i=0; i<axisSrc.positions.length; i++){
+  axis.positions.push([
+    2*axisSrc.positions[i][0],
+    0,
+    2*axisSrc.positions[i][1]
+  ])
+}
+
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
   distance: 20,
@@ -52,12 +62,12 @@ function box (regl){
     vert: glsl`
       precision mediump float;
       uniform mat4 model, projection, view;
-      attribute vec2 position;
+      attribute vec3 position;
       attribute vec3 normal;
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(vec3(2.0*position.x,0,2.0*position.y)-normal*0.3, 1.0);
+        vec4(vec3(position.x,position.y,position.z)-normal*0.3, 1.0);
       }`,
     attributes: {
       position: axis.positions,
