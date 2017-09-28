@@ -1,66 +1,55 @@
 var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
-var mesh = require('./haxis.json')
+var axisSrc = require('./haxis.json')
 var vectorizeText = require('vectorize-text')
 var meshCombine = require('mesh-combine')
-var leftTextMesh = vectorizeText('left', {
-  triangles: true,
-  width: 4,
-  textAlign: 'center',
-  textBaseline: 'middle'
-})
 var rightTextMeshSrc = vectorizeText('right', {
   font: 'arial',
   triangles: true,
-  width: 6,
+  width: 1,
   textAlign: 'center'
-})
-var frontTextMeshSrc = vectorizeText('front', {
-  triangles: true,
-  width: 6,
-  textAlign: 'center',
-  textBaseline: 'middle'
 })
 var backTextMeshSrc = vectorizeText('back', {
   font: 'arial',
   triangles: true,
-  width: 6,
+  width: 1,
   textAlign: 'center'
 })
+var axis = {
+  positions: [], 
+  cells: axisSrc.cells, 
+  normals: axisSrc.normals
+}
+for (var i=0; i<axisSrc.positions.length; i++) {
+  axis.positions.push([
+    axisSrc.positions[i][0]-axisSrc.normals[i][0]*0.15,
+    0-axisSrc.normals[i][1]*0.15,
+    axisSrc.positions[i][1]-axisSrc.normals[i][2]*0.15
+  ])
+}
 var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
 for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
   rightTextMesh.positions.push([
-    rightTextMeshSrc.positions[i][0]+7,
-    0,
-    rightTextMeshSrc.positions[i][1]+4
-  ])
-}
-var frontTextMesh = {positions: [], cells: frontTextMeshSrc.cells}
-for (var i=0; i<frontTextMeshSrc.positions.length; i++) {
-  frontTextMesh.positions.push([
-    0+2,
-    frontTextMeshSrc.positions[i][1],
-    frontTextMeshSrc.positions[i][0]-6
+    rightTextMeshSrc.positions[i][1]+0.7,
+    -0,
+    -rightTextMeshSrc.positions[i][0]-2
   ])
 }
 var backTextMesh = {positions: [], cells: backTextMeshSrc.cells}
 for (var i=0; i<backTextMeshSrc.positions.length; i++) {
   backTextMesh.positions.push([
-    -backTextMeshSrc.positions[i][1]-4,
-    0,
-    backTextMeshSrc.positions[i][0]+7
+    backTextMeshSrc.positions[i][0]+2,
+    -0,
+    backTextMeshSrc.positions[i][1]+0.7
   ])
-}
-for (var i=0; i<leftTextMesh.positions.length; i++) {
-  leftTextMesh.positions[i].push(0)
-  leftTextMesh.positions[i][0] = leftTextMesh.positions[i][0] - 3 
 }
 var textMesh = meshCombine([rightTextMesh, backTextMesh])
 console.log(JSON.stringify(textMesh))
+//console.log(JSON.stringify(axis))
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
-  distance: 20,
+  distance: 7,
   theta: 0.3,
   phi: 0.4
 })
@@ -75,18 +64,18 @@ function box (regl){
     vert: glsl`
       precision mediump float;
       uniform mat4 model, projection, view;
-      attribute vec2 position;
+      attribute vec3 position;
       attribute vec3 normal;
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(vec3(3.0*position.x,0,3.0*position.y)-normal*0.3535, 1.0);
+        vec4(position, 1.0);
       }`,
     attributes: {
-      position: mesh.positions,
-      normal: mesh.normals
+      position: axis.positions,
+      normal: axis.normals
     },
-    elements: mesh.cells,
+    elements: axis.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -120,7 +109,7 @@ function text (regl){
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(position.z, -position.y, -position.x, 1.0);
+        vec4(position.x, position.y, position.z, 1.0);
 
       }`,
     attributes: {

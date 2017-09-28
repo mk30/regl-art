@@ -2,62 +2,55 @@ var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
 var axisSrc = require('./axis.json')
-var haxisSrc = require('./haxis.json')
 var vectorizeText = require('vectorize-text')
 var meshCombine = require('mesh-combine')
 var rightTextMeshSrc = vectorizeText('right', {
   font: 'arial',
   triangles: true,
-  width: 6,
+  width: 1,
   textAlign: 'center'
 })
 var backTextMeshSrc = vectorizeText('back', {
   font: 'arial',
   triangles: true,
-  width: 6,
+  width: 1,
   textAlign: 'center'
 })
 var rightTextMesh = {positions: [], cells: rightTextMeshSrc.cells}
 for (var i=0; i<rightTextMeshSrc.positions.length; i++) {
   rightTextMesh.positions.push([
-    -rightTextMeshSrc.positions[i][0]-6,
-    -rightTextMeshSrc.positions[i][1]-4,
-    0
+    0,
+    -rightTextMeshSrc.positions[i][1]-0.7,
+    -rightTextMeshSrc.positions[i][0]-1.6
   ])
 }
 var backTextMesh = {positions: [], cells: backTextMeshSrc.cells}
 for (var i=0; i<backTextMeshSrc.positions.length; i++) {
   backTextMesh.positions.push([
-    0,
-    -backTextMeshSrc.positions[i][1]-4,
-    backTextMeshSrc.positions[i][0]+6
+    backTextMeshSrc.positions[i][0]+1.6,
+    -backTextMeshSrc.positions[i][1]-0.7,
+    0
   ])
 }
 var textMesh = meshCombine([rightTextMesh, backTextMesh])
 //console.log(JSON.stringify(textMesh))
 
-var axis = {positions: [], cells: axisSrc.cells, normals:
-axisSrc.normals}
+var axis = {
+  positions: [], 
+  cells: axisSrc.cells, 
+  normals: axisSrc.normals
+}
 for (var i=0; i<axisSrc.positions.length; i++){
   axis.positions.push([
-    2*axisSrc.positions[i][0]-axisSrc.normals[i][0]*0.3,
-    0-axisSrc.normals[i][1]*0.3,
-    2*axisSrc.positions[i][1]-axisSrc.normals[i][2]*0.3
+    (axisSrc.positions[i][0]-axisSrc.normals[i][0]*0.2)*0.9,
+    (0+axisSrc.normals[i][1]*0.2),
+    (axisSrc.positions[i][1]-axisSrc.normals[i][2]*0.2)*0.9
   ])
 }
-var haxis = {positions: [], cells: haxisSrc.cells, normals:
-haxisSrc.normals}
-for (var i=0; i<haxisSrc.positions.length; i++){
-  haxis.positions.push([
-    3*haxisSrc.positions[i][0]-haxisSrc.normals[i][0]*0.3535,
-    0-haxisSrc.normals[i][1]*0.3,
-    3*haxisSrc.positions[i][1]-haxisSrc.normals[i][2]*0.3535
-  ])
-}
-console.log(JSON.stringify(haxis))
+console.log(JSON.stringify(axis))
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
-  distance: 20,
+  distance: 7,
   theta: 0.3,
   phi: 0.4
 })
@@ -80,10 +73,10 @@ function box (regl){
         vec4(vec3(position.x,position.y,position.z), 1.0);
       }`,
     attributes: {
-      position: haxis.positions,
-      normal: haxis.normals
+      position: axis.positions,
+      normal: axis.normals
     },
-    elements: haxis.cells,
+    elements: axis.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -116,7 +109,7 @@ function text (regl){
       uniform float t;
       void main () {
         gl_Position = projection * view * model *
-        vec4(position.z, position.y, position.x, 1.0);
+        vec4(position.x, position.y, position.z, 1.0);
 
       }`,
     attributes: {

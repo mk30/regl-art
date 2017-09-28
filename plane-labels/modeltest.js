@@ -2,7 +2,13 @@ var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
 var normals = require('angle-normals')
-var mesh = require('./main.json')
+var htext = require('./htext.json')
+var haxis = require('./phaxis.json')
+var text = require('./text.json')
+var axis = require('./paxis.json')
+var meshCombine = require('mesh-combine')
+
+var mesh = meshCombine([axis,text]) 
 
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
