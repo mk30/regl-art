@@ -2,7 +2,7 @@ var regl = require('regl')()
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
 var normals = require('angle-normals')
-var mesh = require('./main.json')
+var mesh = require('./box.json')
 
 var camera = require('regl-camera')(regl, {
   center: [0, 0, 0],
@@ -12,7 +12,7 @@ var camera = require('regl-camera')(regl, {
   phi: 0.4
 })
 var rmat = []
-function phone (regl){
+function model (regl){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -56,13 +56,13 @@ function phone (regl){
   })
 }
 var draw = {
-  phone: phone(regl)
+  model: model(regl)
 }
 regl.frame(function() {
   regl.clear({
     color: [0, 0, 0, 1]
   })
   camera(function() {
-    draw.phone()
+    draw.model()
   })
 })
