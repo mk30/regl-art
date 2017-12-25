@@ -4,15 +4,18 @@ var camera = require('../libraries/camera.js')(regl, {
   distance: 100 
 })
 var pyramid = require('./3dpyramid.json')
+var pyramiddown = require('./3dpyramiddown.json')
 var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
+var combine = require('mesh-combine')
 var feedback = require('../libraries/feedbackeffect.js')
 var drawfeedback = feedback(regl, `
   vec3 sample (vec2 uv, sampler2D tex) {
     return 0.9*texture2D(tex, (0.98*(2.0*uv-1.0)+1.0)*0.5).rgb;
   }
 `)
+var crystal = combine([pyramid, pyramiddown])
 const feedBackTexture = regl.texture({})
 function makepyramid () {
   var model = []
@@ -36,8 +39,8 @@ function makepyramid () {
       }
     `,
     attributes: {
-      position: pyramid.positions,
-      normal: anormals(pyramid.cells, pyramid.positions)
+      position: crystal.positions,
+      normal: anormals(crystal.cells, crystal.positions)
     },
     uniforms: {
       model: function (context) {
@@ -46,7 +49,7 @@ function makepyramid () {
         return model
       }
     },
-    elements: pyramid.cells
+    elements: crystal.cells
   })
 }
 var draw = {
