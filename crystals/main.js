@@ -3,7 +3,7 @@ var camera = require('../libraries/camera.js')(regl, {
   center: [0,0,0],
   distance: 100 
 })
-var pyramid = require('./pyramid.json')
+var pyramid = require('./3dpyramid.json')
 var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var glsl = require('glslify')
@@ -19,20 +19,25 @@ function makepyramid () {
   return regl({
     frag: `
       precision mediump float;
+      varying vec3 vnormal, vpos;
       void main () {
-        gl_FragColor = vec4(0,1,1,1);
+        gl_FragColor = vec4((1.0/vpos)*(1.0-vnormal)+0.3,1);
       }
     `,
     vert: `
       precision mediump float;
       uniform mat4 projection, view, model;
-      attribute vec3 position;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
       void main () {
+        vnormal = normal;
+        vpos = position;
         gl_Position = projection * view * model * vec4(position,1);
       }
     `,
     attributes: {
-      position: pyramid.positions
+      position: pyramid.positions,
+      normal: anormals(pyramid.cells, pyramid.positions)
     },
     uniforms: {
       model: function (context) {
