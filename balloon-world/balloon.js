@@ -20,6 +20,7 @@ const drawBall = regl({
     uniform float t;
     void main () {
       gl_FragColor = vec4(abs(cnoise(hsl2rgb(vnormal+vnormal*vpos*sin(t)))), 1.0);
+
     }`,
   vert: glsl`
     precision mediump float;

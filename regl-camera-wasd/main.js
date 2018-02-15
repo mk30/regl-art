@@ -3,7 +3,7 @@ var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
 var planeMesh = require("grid-mesh")(300, 60)
-var camera = require('./lib/camera.js')({ distance: 0.7, theta: 1.2, phi: 0.5,
+var camera = require('./lib/camera.js')({ distance: 25, theta: -1.57, phi: 0,
   width: window.innerWidth, height: window.innerHeight
 })
 var mat4 = require('gl-mat4')
@@ -20,6 +20,11 @@ function onmouse (ev) {
 window.addEventListener('wheel', function (ev) {
   camera.onwheel(ev)
 })
+/*
+window.addEventListener('keydown', function (ev) {
+  camera.onkeydown(ev)
+})
+*/
 
 var batch = []
 for (var i = 0; i < 10; i++) {

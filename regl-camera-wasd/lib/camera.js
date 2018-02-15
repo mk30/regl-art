@@ -28,7 +28,8 @@ function Camera (opts) {
   this.delta = {
     theta: 0,
     phi: 0,
-    distance: 0
+    distance: 0,
+    center: [0,0]
   }
   this.idle = true
   this.update(0)
@@ -53,6 +54,10 @@ Camera.prototype.onmouse = function (ev) {
 Camera.prototype.onwheel = function (ev) {
   this.delta.distance += ev.deltaY / this.props.height * 20.0
   if (Math.abs(this.delta.distance) > 1e-9) this.emit('frame')
+}
+Camera.prototype.onkeydown = function (ev) {
+  console.log(ev)
+  if (ev.key === 'w') {}
 }
 
 Camera.prototype.update = function (dt) {
