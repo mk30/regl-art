@@ -7,15 +7,33 @@ var camera = require('regl-camera')(regl, {
 })
 var leaf = {
   positions: [
+  /*
     [0,7,0],
     [1,1,0],
     [0,0,0],
     [-1,1,0]
+  */
   ],
   cells: [
+  /*
     [0,1,2],
     [0,2,3]
+  */
   ]
+}
+for (var i = 0; i < 10; i++) {
+  var x = i*3
+  leaf.positions.push(
+    [x,7,0],
+    [1+x,1,0],
+    [x,0,0],
+    [-1+x,1,0]
+  )
+  var k = i*4
+  leaf.cells.push(
+    [0+k,1+k,2+k],
+    [0+k,2+k,3+k]
+  )
 }
 function makeleaf () {
   var model = []
