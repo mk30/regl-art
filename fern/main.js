@@ -34,12 +34,12 @@ for (var i = 0; i < 10; i++) {
   )
 }
 for (var j = 0; j < 10; j++) {
-  var z = j
+  var x = j*3
   for (var i = 0; i < 10; i++) {
     var theta = i/10*2*Math.PI
-    var r = 1
-    var x = Math.cos(theta)*r
-    var y = Math.sin(theta)*r
+    var r = 0.2
+    var y = Math.cos(theta)*r
+    var z = Math.sin(theta)*r
     stem.positions.push(
       [x,y,z]
     )
