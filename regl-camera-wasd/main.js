@@ -3,8 +3,14 @@ var regl = require('regl')()
 var glsl = require('glslify')
 var normals = require('angle-normals')
 var planeMesh = require("grid-mesh")(300, 60)
+/*
 var camera = require('./lib/camera.js')({ distance: 25, theta: -1.57, phi: 0,
   width: window.innerWidth, height: window.innerHeight
+})
+*/
+var camera = require('./lib/james-cam.js')({
+  width: window.innerWidth,
+  height: window.innerHeight
 })
 var mat4 = require('gl-mat4')
 var vec3 = require('gl-vec3')
@@ -12,19 +18,15 @@ var mat0 = [], v0 = [], pmat = [], rmat = []
 var mesh = column({ radius: 2, height: 25 })
 var col = fromMesh(mesh)
 var golf = require('./golf.json')
-window.addEventListener('mousemove', onmouse)
-window.addEventListener('mousedown', onmouse)
-function onmouse (ev) {
-  camera.onmouse(ev)
-}
-window.addEventListener('wheel', function (ev) {
-  camera.onwheel(ev)
+
+require('./lib/keys.js')(camera, document.body)
+
+var cameraUniforms = regl({
+  uniforms: {
+    projection: () => camera.projection,
+    view: () => camera.view
+  }
 })
-/*
-window.addEventListener('keydown', function (ev) {
-  camera.onkeydown(ev)
-})
-*/
 
 var batch = []
 for (var i = 0; i < 10; i++) {
@@ -80,8 +82,8 @@ function roof (regl) {
     uniforms: {
       time: regl.context('time'),
       location: regl.prop('location'),
-      projection: regl.prop('projection'),
-      view: regl.prop('view')
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
     },
     elements: planeMesh.cells
   })
@@ -133,8 +135,8 @@ function fromMesh (mesh) {
       },
       time: regl.context('time'),
       location: regl.prop('location'),
-      projection: regl.prop('projection'),
-      view: regl.prop('view')
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
     },
     elements: mesh.cells
   })
@@ -180,8 +182,8 @@ function floor (regl) {
     uniforms: {
       time: regl.context('time'),
       location: regl.prop('location'),
-      projection: regl.prop('projection'),
-      view: regl.prop('view')
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
     },
     elements: planeMesh.cells
   })
@@ -232,8 +234,8 @@ function dolphin (regl){
         mat4.rotateZ(rmat, rmat, t)
         return rmat
       },
-      projection: regl.prop('projection'),
-      view: regl.prop('view')
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -289,13 +291,15 @@ var draw = {
 }
 var roofprops = Object.assign({}, { location: [-250,20, -30] }, camera.props)
 var floorprops = Object.assign({}, { location: [-250,-10, -30] }, camera.props)
-console.log(camera.props)
+
 regl.frame(function () {
-  camera.update(0.016)
-  regl.clear({ color: [0.9,0.9,0.9,1] })
-  draw.bg()
-  draw.col(batch)
-  draw.roof(roofprops)
-  draw.floor(floorprops)
-  draw.dolphin(camera.props)
+  cameraUniforms(() => {
+		draw.bg()
+		draw.col(batch)
+		draw.roof(roofprops)
+		draw.floor(floorprops)
+		draw.dolphin(camera.props)
+    draw.plane({texture})
+  })
+  camera.update()
 })

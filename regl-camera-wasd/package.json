@@ -5,6 +5,7 @@
   "main": "main.js",
   "dependencies": {
     "angle-normals": "^1.0.0",
+    "choo": "^7.1.0",
     "column-mesh": "^1.0.0",
     "gl-mat4": "^1.1.4",
     "gl-vec3": "^1.0.3",
