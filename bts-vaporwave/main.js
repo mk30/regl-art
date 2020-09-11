@@ -17,7 +17,7 @@ var vec3 = require('gl-vec3')
 var mat0 = [], v0 = [], pmat = [], rmat = []
 var mesh = column({ radius: 2, height: 25 })
 var col = fromMesh(mesh)
-//var golf = require('./golf.json')
+var boy1 = require('./dance4.json')
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -188,7 +188,7 @@ function floor (regl) {
     elements: planeMesh.cells
   })
 }
-function dolphin (regl){
+function boy (regl){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -217,10 +217,10 @@ function dolphin (regl){
         gl_PointSize = 10.0*sin(t);
       }`,
     attributes: {
-      position: golf.positions,
-      normal: normals(golf.cells, golf.positions)
+      position: boy1.positions,
+      normal: normals(boy1.cells, boy1.positions)
     },
-    elements: golf.cells,
+    elements: boy1.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -228,10 +228,11 @@ function dolphin (regl){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.scale(rmat, rmat,[0.1,0.1,0.1])
-        mat4.rotateY(rmat, rmat, -t)
-        mat4.rotateX(rmat, rmat, -t/2.0)
-        mat4.rotateZ(rmat, rmat, t)
+        mat4.scale(rmat, rmat,[0.1,0.1,0.1])
+        mat4.rotateY(rmat, rmat, t/5.0)
+        //mat4.rotateX(rmat, rmat, -t/2.0)
+        //mat4.rotateZ(rmat, rmat, t)
+        mat4.translate(rmat, rmat, [0, -100, 12 + Math.cos(t/5)/2])
         return rmat
       },
       //projection: regl.prop('projection'),
@@ -282,7 +283,7 @@ function bg (regl) {
     depth: { enable: false, mask: false }
   })
 }
-function plane (regl) {
+function vidwindow (regl) {
   return regl({
     frag: glsl`
       precision highp float;
@@ -294,7 +295,7 @@ function plane (regl) {
     `,
     vert: glsl`
       precision highp float;
-      uniform mat4 projection, view;
+      uniform mat4 projection, view, model;
       attribute vec3 position;
       attribute vec2 uv;
       varying vec3 vpos;
@@ -302,12 +303,13 @@ function plane (regl) {
       void main () {
         vpos = position;
         vuv = uv;
-        gl_Position = projection * view * vec4(position,1);
+        gl_Position = projection * view * model * vec4(position,1);
       }
     `,
     uniforms: {
       time: regl.context('time'),
-      tex: regl.prop('texture')
+      tex: regl.prop('texture'),
+      model: regl.prop('model')
     },
     attributes: {
       position: [
@@ -331,17 +333,35 @@ var draw = {
   col: col,
   roof: roof(regl),
   floor: floor(regl),
-  //dolphin: dolphin(regl)
-  plane: plane(regl)
+  boy: boy(regl),
+  vidwindow: vidwindow(regl)
 }
 var roofprops = Object.assign({}, { location: [-250,20, -30] }, camera.props)
 var floorprops = Object.assign({}, { location: [-250,-10, -30] }, camera.props)
 
 require('resl')({
   manifest: {
-    texture: {
+    texture0: {
       type: 'image',
-      src: './vidwindowrm.png',
+      src: './assets/vidwindowrm.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texture1: {
+      type: 'image',
+      src: './assets/vidwindowjimin.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texture2: {
+      type: 'image',
+      src: './assets/vidwindowjhope.png',
       parser: (data) => regl.texture({
         data: data,
         mag: 'linear',
@@ -349,16 +369,47 @@ require('resl')({
       })
     }
   },
-  onDone: ({texture}) => {
-    regl.frame(function () {
+  onDone: (assets) => {
+    var vidProps = [
+      {
+        texture: assets.texture0,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texture1,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texture2,
+        model: new Float32Array(16)
+      },
+      //{ texture: assets.texture1 },
+    ]
+    regl.frame(function ({ time }) {
 			regl.clear({ color: [0.9,0.9,0.9,1] })
       cameraUniforms(() => {
         draw.bg()
         draw.col(batch)
         draw.roof(roofprops)
         draw.floor(floorprops)
-        //draw.dolphin(camera.props)
-        draw.plane({texture})
+        draw.boy(camera.props)
+        var m = vidProps[0].model
+        mat4.identity(m)
+        mat4.rotateY(m, m, time)
+        m = vidProps[1].model
+        mat4.identity(m)
+        mat4.rotateY(m, m, time*0.5)
+        m = vidProps[2].model
+        mat4.identity(m)
+        mat4.scale(m, m, [0.7, 0.7, 0.7])
+        mat4.translate(m, m, [-72+0.5*Math.cos(time), 0.2*Math.sin(time*2), -12])
+        mat4.rotateY(m, m, Math.PI/2)
+        /*
+        m = vidProps[3].model
+        mat4.identity(m)
+        mat4.rotateY(m, m, time)
+        */
+        draw.vidwindow(vidProps)
       })
       camera.update()
     })
