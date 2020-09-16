@@ -249,7 +249,7 @@ function dolphin (regl){
     cull: { enable: true }
   })
 }
-function boy (regl){
+function boy (regl, mesh){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -257,8 +257,8 @@ function boy (regl){
       varying vec3 vnormal, vpos;
       uniform float t;
       void main () {
-        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
-        //vec3 p = vnormal+0.1/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
+        vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t/20.0)))*0.1+0.7);
+        //vec3 p = vnormal+0.5/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
         float cross = abs(max(
           max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
           sin(p.x*10.0)
@@ -280,10 +280,10 @@ function boy (regl){
         gl_PointSize = 1.0*sin(t);
       }`,
     attributes: {
-      position: boy1.positions,
-      normal: normals(boy1.cells, boy1.positions)
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
     },
-    elements: boy1.cells,
+    elements: mesh.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -310,7 +310,7 @@ function boy (regl){
     cull: { enable: true }
   })
 }
-function boyPoints (regl){
+function boyPoints (regl, mesh){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -341,10 +341,10 @@ function boyPoints (regl){
         gl_PointSize = 1.0+abs((sin(t)+0.1));
       }`,
     attributes: {
-      position: boy1.positions,
-      normal: normals(boy1.cells, boy1.positions)
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
     },
-    elements: boy1.cells,
+    elements: mesh.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -364,6 +364,122 @@ function boyPoints (regl){
       //view: regl.prop('view')
     },
     primitive: "points",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+function crown (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 1);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.translate(rmat, rmat, [-50, 11, 20])
+        mat4.scale(rmat, rmat,[0.7,0.7,0.7])
+        mat4.rotateX(rmat, rmat, -t/2.0)
+        mat4.rotateZ(rmat, rmat, t)
+        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+function crownSuga (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 1);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.translate(rmat, rmat, [-70, 9, -20])
+        mat4.scale(rmat, rmat,[0.7,0.7,0.7])
+        mat4.rotateY(rmat, rmat, t)
+        mat4.rotateX(rmat, rmat, -Math.PI/2)
+        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "triangles",
     blend: {
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
@@ -453,21 +569,26 @@ function vidwindow (regl) {
     elements: [[0,1,2],[0,2,3]]
   })
 }
-var draw = {
-  bg: bg(regl),
-  col: col,
-  roof: roof(regl),
-  floor: floor(regl),
-  boy: boy(regl),
-  boyPoints: boyPoints(regl),
-  dolphin: dolphin(regl),
-  vidwindow: vidwindow(regl)
-}
 var roofprops = Object.assign({}, { location: [-250,20, -30] }, camera.props)
 var floorprops = Object.assign({}, { location: [-250,-10, -30] }, camera.props)
 
 require('resl')({
   manifest: {
+    singer: {
+      type: 'text',
+      src: './assets/singersmsimplified1.json',
+      parser: JSON.parse
+    },
+    crown: {
+      type: 'text',
+      src: './assets/crownsim.json',
+      parser: JSON.parse
+    },
+    crownSuga: {
+      type: 'text',
+      src: './assets/crownsim.json',
+      parser: JSON.parse
+    },
     texture0: {
       type: 'image',
       src: './assets/vidwindowrm.png',
@@ -512,9 +633,39 @@ require('resl')({
         mag: 'linear',
         min: 'linear'
       })
+    },
+    texture5: {
+      type: 'image',
+      src: './assets/vidwindowjk.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texture6: {
+      type: 'image',
+      src: './assets/vidwindowsuga.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
     }
   },
   onDone: (assets) => {
+		var draw = {
+			bg: bg(regl),
+			col: col,
+			roof: roof(regl),
+			floor: floor(regl),
+			boy: boy(regl, assets.singer),
+			boyPoints: boyPoints(regl, assets.singer),
+			dolphin: dolphin(regl),
+      crown: crown(regl, assets.crown),
+      crownSuga: crownSuga(regl, assets.crown),
+			vidwindow: vidwindow(regl)
+		}
     var vidProps = [
       {
         texture: assets.texture0,
@@ -536,6 +687,14 @@ require('resl')({
         texture: assets.texture4,
         model: new Float32Array(16)
       },
+      {
+        texture: assets.texture5,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texture6,
+        model: new Float32Array(16)
+      },
       //{ texture: assets.texture1 },
     ]
     regl.frame(function ({ time }) {
@@ -548,6 +707,8 @@ require('resl')({
         draw.boy(camera.props)
         draw.boyPoints(camera.props)
         draw.dolphin(camera.props)
+        draw.crown(camera.props)
+        draw.crownSuga(camera.props)
         var m = vidProps[0].model
         mat4.identity(m)
         mat4.rotateY(m, m, time/2-3)
@@ -574,6 +735,20 @@ require('resl')({
         mat4.translate(m, m, [-72, 0, 12])
         mat4.rotateY(m, m, -Math.PI/2)
         mat4.rotateY(m, m, time+1.5)
+        m = vidProps[5].model
+        mat4.identity(m)
+        mat4.translate(m, m, [-45, 0, -3])
+        //mat4.translate(m, m, [-82, 0, 0])
+        mat4.scale(m, m, [1.0-Math.sin(time), 1.0-Math.sin(time), 0.8+0.5*Math.sin(time)])
+        //mat4.rotateY(m, m, -Math.PI/2)
+        //mat4.rotateY(m, m, time+1.5)
+        m = vidProps[6].model
+        mat4.identity(m)
+        mat4.translate(m, m, [-0.5*Math.cos(time), 0.2*Math.sin(time*2), 0])
+        mat4.translate(m, m, [-40, 0, 0])
+        mat4.translate(m, m, [-30, 0, -20])
+        mat4.rotateY(m, m, -Math.PI/2)
+        mat4.scale(m, m, [0.8, 0.8, 0.8])
         draw.vidwindow(vidProps)
       })
       camera.update()
