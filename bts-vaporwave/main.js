@@ -1,5 +1,5 @@
 var column = require('column-mesh')
-var regl = require('regl')()
+var regl = require('regl')({ extensions: ['oes_element_index_uint'] })
 var glsl = require('glslify')
 var normals = require('angle-normals')
 var planeMesh = require("grid-mesh")(300, 60)
@@ -17,7 +17,8 @@ var vec3 = require('gl-vec3')
 var mat0 = [], v0 = [], pmat = [], rmat = []
 var mesh = column({ radius: 2, height: 25 })
 var col = fromMesh(mesh)
-var boy1 = require('./dance4.json')
+var boy1 = require('./assets/singersmsimplified1.json')
+var dolphin1 = require('./assets/golf.json')
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -68,7 +69,8 @@ function roof (regl) {
       void main () {
         vnormal = normal;
         vpos = position;
-        float dx = snoise(vec3(vpos+(cos(time)+0.5)/0.5, sin(time + vpos.y)));
+        //float dx = snoise(vec3(vpos+(cos(time)+0.5)/0.5, sin(time + vpos.y)));
+        float dx = snoise(vec3(vpos, 0.25*sin(time + vpos.y)));
         float x = position.x + location.x;
         float y = 0.0 + location.y+dx;
         float z = position.y + location.z;
@@ -152,7 +154,7 @@ function floor (regl) {
         return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
       }
       void main () {
-        vec3 c = hsl2rgb(vec3 (0.2+sin(time/20.0)+cos(vpos.x),0.6,0.5)); 
+        vec3 c = hsl2rgb(vec3 (0.2+sin(time/5.0)+cos(vpos.x),0.1,0.5)); 
         gl_FragColor = vec4(c, 0.7);
       }
     `,
@@ -168,7 +170,8 @@ function floor (regl) {
       void main () {
         vnormal = normal;
         vpos = position;
-        float dx = snoise(vec3(vpos+(cos(time)+0.5)/0.5, sin(time + vpos.y)));
+        //float dx = snoise(vec3(vpos+(cos(time/2.0)+0.5)/0.5, sin(time + vpos.y)));
+        float dx = snoise(vec3(vpos*0.1, 0.1*sin(time*2.0 + vpos.y)));
         float x = position.x + location.x;
         float y = 0.0 + location.y+dx;
         float z = position.y + location.z;
@@ -188,7 +191,7 @@ function floor (regl) {
     elements: planeMesh.cells
   })
 }
-function boy (regl){
+function dolphin (regl){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -214,7 +217,67 @@ function boy (regl){
         vpos = position;
         gl_Position = projection * view * model *
         vec4(position, 1.0);
-        gl_PointSize = 10.0*sin(t);
+      }`,
+    attributes: {
+      position: dolphin1.positions,
+      normal: normals(dolphin1.cells, dolphin1.positions)
+    },
+    elements: dolphin1.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.translate(rmat, rmat, [-50, 11, 20])
+        mat4.scale(rmat, rmat,[0.7,0.7,0.7])
+        mat4.rotateX(rmat, rmat, -t/2.0)
+        mat4.rotateZ(rmat, rmat, t)
+        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+function boy (regl){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
+        //vec3 p = vnormal+0.1/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 0.5+sin(t));
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+        //gl_PointSize = 10.0*sin(t);
+        gl_PointSize = 1.0*sin(t);
       }`,
     attributes: {
       position: boy1.positions,
@@ -228,17 +291,79 @@ function boy (regl){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        mat4.scale(rmat, rmat,[0.1,0.1,0.1])
-        mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.scale(rmat, rmat,[0.9,0.9,0.9])
+        mat4.rotateY(rmat, rmat, 2.0)
+        //mat4.rotateY(rmat, rmat, t/5.0)
         //mat4.rotateX(rmat, rmat, -t/2.0)
         //mat4.rotateZ(rmat, rmat, t)
-        mat4.translate(rmat, rmat, [0, -100, 12 + Math.cos(t/5)/2])
+        mat4.translate(rmat, rmat, [0, -12, 12 + Math.cos(t/5)/2])
         return rmat
       },
       //projection: regl.prop('projection'),
       //view: regl.prop('view')
     },
     primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+function boyPoints (regl){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        //vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
+        vec3 p = vnormal+0.1/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p, 1.0);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+        //gl_PointSize = 10.0*sin(t);
+        gl_PointSize = 1.0+abs((sin(t)+0.1));
+      }`,
+    attributes: {
+      position: boy1.positions,
+      normal: normals(boy1.cells, boy1.positions)
+    },
+    elements: boy1.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        mat4.scale(rmat, rmat,[0.9,0.9,0.9])
+        mat4.rotateY(rmat, rmat, 2.0)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        //mat4.rotateX(rmat, rmat, -t/2.0)
+        //mat4.rotateZ(rmat, rmat, t)
+        mat4.translate(rmat, rmat, [0, -12, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "points",
     blend: {
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
@@ -313,10 +438,10 @@ function vidwindow (regl) {
     },
     attributes: {
       position: [
-        [-40,+10,-7],
-        [-40,-10,-7],
-        [-40,-10,+7],
-        [-40,+10,+7]
+        [0,+10,-7],
+        [0,-10,-7],
+        [0,-10,+7],
+        [0,+10,+7]
       ],
       uv: [
         [1.0, 0.0],
@@ -334,6 +459,8 @@ var draw = {
   roof: roof(regl),
   floor: floor(regl),
   boy: boy(regl),
+  boyPoints: boyPoints(regl),
+  dolphin: dolphin(regl),
   vidwindow: vidwindow(regl)
 }
 var roofprops = Object.assign({}, { location: [-250,20, -30] }, camera.props)
@@ -367,6 +494,24 @@ require('resl')({
         mag: 'linear',
         min: 'linear'
       })
+    },
+    texture3: {
+      type: 'image',
+      src: './assets/vidwindowjinv.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texture4: {
+      type: 'image',
+      src: './assets/vidwindowjinv.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
     }
   },
   onDone: (assets) => {
@@ -383,6 +528,14 @@ require('resl')({
         texture: assets.texture2,
         model: new Float32Array(16)
       },
+      {
+        texture: assets.texture3,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texture4,
+        model: new Float32Array(16)
+      },
       //{ texture: assets.texture1 },
     ]
     regl.frame(function ({ time }) {
@@ -393,22 +546,34 @@ require('resl')({
         draw.roof(roofprops)
         draw.floor(floorprops)
         draw.boy(camera.props)
+        draw.boyPoints(camera.props)
+        draw.dolphin(camera.props)
         var m = vidProps[0].model
         mat4.identity(m)
-        mat4.rotateY(m, m, time)
+        mat4.rotateY(m, m, time/2-3)
+        mat4.translate(m, m, [-40, 0, 0])
         m = vidProps[1].model
         mat4.identity(m)
-        mat4.rotateY(m, m, time*0.5)
+        mat4.rotateY(m, m, time/2-1.5)
+        mat4.translate(m, m, [-40, 0, 0])
         m = vidProps[2].model
         mat4.identity(m)
         mat4.scale(m, m, [0.7, 0.7, 0.7])
-        mat4.translate(m, m, [-72+0.5*Math.cos(time), 0.2*Math.sin(time*2), -12])
+        mat4.translate(m, m, [-1.5-0.5*Math.cos(time), 0.2*Math.sin(time*2), 30])
+        mat4.translate(m, m, [-70, 0, 0])
         mat4.rotateY(m, m, Math.PI/2)
-        /*
         m = vidProps[3].model
         mat4.identity(m)
+        mat4.translate(m, m, [-40, 0, 0])
+        mat4.translate(m, m, [-72, 0, 12])
+        mat4.rotateY(m, m, -Math.PI/2)
         mat4.rotateY(m, m, time)
-        */
+        m = vidProps[4].model
+        mat4.identity(m)
+        mat4.translate(m, m, [-40, 0, 0])
+        mat4.translate(m, m, [-72, 0, 12])
+        mat4.rotateY(m, m, -Math.PI/2)
+        mat4.rotateY(m, m, time+1.5)
         draw.vidwindow(vidProps)
       })
       camera.update()
