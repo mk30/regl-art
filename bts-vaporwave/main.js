@@ -231,7 +231,7 @@ function dolphin (regl){
         var t = context.time
         mat4.identity(rmat)
         //mat4.rotateY(rmat, rmat, t/5.0)
-        mat4.translate(rmat, rmat, [-50, 11, 20])
+        mat4.translate(rmat, rmat, [-55, 3, 18])
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateX(rmat, rmat, -t/2.0)
         mat4.rotateZ(rmat, rmat, t)
@@ -411,7 +411,7 @@ function crown (regl, mesh){
         var t = context.time
         mat4.identity(rmat)
         //mat4.rotateY(rmat, rmat, t/5.0)
-        mat4.translate(rmat, rmat, [-50, 11, 20])
+        mat4.translate(rmat, rmat, [-55, 3, 18])
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateX(rmat, rmat, -t/2.0)
         mat4.rotateZ(rmat, rmat, t)
@@ -473,6 +473,64 @@ function crownSuga (regl, mesh){
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateY(rmat, rmat, t)
         mat4.rotateX(rmat, rmat, -Math.PI/2)
+        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+function cat (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 1);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.translate(rmat, rmat, [-74+Math.sin(t/3.0), -9+Math.sin(t*10.0), -18+Math.random()])
+        mat4.scale(rmat, rmat,[0.7,0.7,0.7])
+        mat4.rotateY(rmat, rmat, Math.sin(t))
+        //mat4.rotateX(rmat, rmat, -Math.PI/2)
         //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
@@ -589,6 +647,11 @@ require('resl')({
       src: './assets/crownsim.json',
       parser: JSON.parse
     },
+    cat: {
+      type: 'text',
+      src: './assets/cat.json',
+      parser: JSON.parse
+    },
     texture0: {
       type: 'image',
       src: './assets/vidwindowrm.png',
@@ -664,6 +727,7 @@ require('resl')({
 			dolphin: dolphin(regl),
       crown: crown(regl, assets.crown),
       crownSuga: crownSuga(regl, assets.crown),
+      cat: cat(regl, assets.cat),
 			vidwindow: vidwindow(regl)
 		}
     var vidProps = [
@@ -709,6 +773,7 @@ require('resl')({
         draw.dolphin(camera.props)
         draw.crown(camera.props)
         draw.crownSuga(camera.props)
+        draw.cat(camera.props)
         var m = vidProps[0].model
         mat4.identity(m)
         mat4.rotateY(m, m, time/2-3)
