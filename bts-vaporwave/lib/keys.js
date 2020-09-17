@@ -111,13 +111,13 @@ module.exports = function (camera, root) {
       camera.move(0, 0, shiftKey || ev.shiftKey ? -4 : -2)
     } else if (ev.key === 'a' || ev.key === 'A' || ev.key === 'ArrowLeft') {
       buttons.a.className = 'active'
-      camera.rotate(0, 1, 0, shiftKey || ev.shiftKey ? 0.12 : 0.06)
+      camera.rotate(0, 1, 0, shiftKey || ev.shiftKey ? 0.16 : 0.12)
     } else if (ev.key === 's' || ev.key === 'S' || ev.key === 'ArrowDown') {
       buttons.s.className = 'active'
       camera.move(0, 0, shiftKey || ev.shiftKey ? 4 : 2)
     } else if (ev.key === 'd' || ev.key === 'D' || ev.key === 'ArrowRight') {
       buttons.d.className = 'active'
-      camera.rotate(0, 1, 0, shiftKey || ev.shiftKey ? -0.12 : -0.06)
+      camera.rotate(0, 1, 0, shiftKey || ev.shiftKey ? -0.16 : -0.12)
     } else if (ev.key === 'Shift') {
       buttons.shift.className = 'active'
     }

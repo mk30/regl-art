@@ -249,6 +249,128 @@ function dolphin (regl){
     cull: { enable: true }
   })
 }
+function beach (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t)))*0.5+0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 1);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+        gl_PointSize = max(0.0, 15.0*(0.5*snoise(vec4(vpos*0.1, t))+0.5));
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.translate(rmat, rmat, [-115, -8, 10])
+        mat4.rotateY(rmat, rmat, Math.PI*0.8)
+        mat4.scale(rmat, rmat,[1.3,1.3,1.3])
+        //mat4.rotateX(rmat, rmat, -t/2.0)
+        //mat4.rotateZ(rmat, rmat, t)
+        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "points",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+function beachLines (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t)))*0.5+0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 1);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_PointSize = 10.0*sin(t);
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+        //gl_PointSize = 10.0*sin(t);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        //mat4.rotateY(rmat, rmat, t/5.0)
+        mat4.translate(rmat, rmat, [-115, -8, 10])
+        mat4.rotateY(rmat, rmat, Math.PI*0.8)
+        mat4.scale(rmat, rmat,[1.3,1.3,1.3])
+        //mat4.rotateX(rmat, rmat, -t/2.0)
+        //mat4.rotateZ(rmat, rmat, t)
+        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "lines",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
 function boy (regl, mesh){
   return regl({
     frag: glsl`
@@ -652,6 +774,16 @@ require('resl')({
       src: './assets/cat.json',
       parser: JSON.parse
     },
+    beach: {
+      type: 'text',
+      src: './assets/beach.json',
+      parser: JSON.parse
+    },
+    beachLines: {
+      type: 'text',
+      src: './assets/beach.json',
+      parser: JSON.parse
+    },
     texture0: {
       type: 'image',
       src: './assets/vidwindowrm.png',
@@ -714,6 +846,15 @@ require('resl')({
         mag: 'linear',
         min: 'linear'
       })
+    },
+    texture7: {
+      type: 'image',
+      src: './assets/vidwindowall.png',
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
     }
   },
   onDone: (assets) => {
@@ -728,6 +869,8 @@ require('resl')({
       crown: crown(regl, assets.crown),
       crownSuga: crownSuga(regl, assets.crown),
       cat: cat(regl, assets.cat),
+      beach: beach(regl, assets.beach),
+      beachLines: beachLines(regl, assets.beach),
 			vidwindow: vidwindow(regl)
 		}
     var vidProps = [
@@ -759,6 +902,10 @@ require('resl')({
         texture: assets.texture6,
         model: new Float32Array(16)
       },
+      {
+        texture: assets.texture7,
+        model: new Float32Array(16)
+      },
       //{ texture: assets.texture1 },
     ]
     regl.frame(function ({ time }) {
@@ -774,6 +921,8 @@ require('resl')({
         draw.crown(camera.props)
         draw.crownSuga(camera.props)
         draw.cat(camera.props)
+        draw.beach(camera.props)
+        draw.beachLines(camera.props)
         var m = vidProps[0].model
         mat4.identity(m)
         mat4.rotateY(m, m, time/2-3)
@@ -791,13 +940,13 @@ require('resl')({
         m = vidProps[3].model
         mat4.identity(m)
         mat4.translate(m, m, [-40, 0, 0])
-        mat4.translate(m, m, [-72, 0, 12])
+        mat4.translate(m, m, [-45, 0, 12])
         mat4.rotateY(m, m, -Math.PI/2)
         mat4.rotateY(m, m, time)
         m = vidProps[4].model
         mat4.identity(m)
         mat4.translate(m, m, [-40, 0, 0])
-        mat4.translate(m, m, [-72, 0, 12])
+        mat4.translate(m, m, [-45, 0, 12])
         mat4.rotateY(m, m, -Math.PI/2)
         mat4.rotateY(m, m, time+1.5)
         m = vidProps[5].model
@@ -814,6 +963,13 @@ require('resl')({
         mat4.translate(m, m, [-30, 0, -20])
         mat4.rotateY(m, m, -Math.PI/2)
         mat4.scale(m, m, [0.8, 0.8, 0.8])
+        m = vidProps[7].model
+        mat4.identity(m)
+        mat4.translate(m, m, [-0.5*Math.cos(time), 0.2*Math.sin(time*2), 0])
+        mat4.translate(m, m, [-40, 0, 0])
+        mat4.translate(m, m, [-100, 0, -5])
+        //mat4.rotateY(m, m, -Math.PI/2)
+        mat4.scale(m, m, [1.4, 1.4, 1.4])
         draw.vidwindow(vidProps)
       })
       camera.update()

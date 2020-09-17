@@ -17,7 +17,7 @@ function Camera (opts) {
   this.far = 5000
   this.position = [30,-5,-15]
   this.rotation = mat4.identity(new Float32Array(16))
-  this.rotation = mat4.rotateY(this.rotation, this.rotation, Math.PI/2 + 0.2)
+  this.rotation = mat4.rotateY(this.rotation, this.rotation, Math.PI-1.3)
   this.delta = {
     position: [0,0,0],
     rotation: mat4.identity(new Float32Array(16))
