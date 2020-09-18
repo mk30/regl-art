@@ -17,8 +17,6 @@ var vec3 = require('gl-vec3')
 var mat0 = [], v0 = [], pmat = [], rmat = []
 var mesh = column({ radius: 2, height: 25 })
 var col = fromMesh(mesh)
-var boy1 = require('./assets/singersmsimplified1.json')
-var dolphin1 = require('./assets/golf.json')
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -191,7 +189,7 @@ function floor (regl) {
     elements: planeMesh.cells
   })
 }
-function dolphin (regl){
+function dolphin (regl, mesh){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -219,10 +217,10 @@ function dolphin (regl){
         vec4(position, 1.0);
       }`,
     attributes: {
-      position: dolphin1.positions,
-      normal: normals(dolphin1.cells, dolphin1.positions)
+      position: mesh.positions,
+      normal: normals(mesh.cells, mesh.positions)
     },
-    elements: dolphin1.cells,
+    elements: mesh.cells,
     uniforms: {
       t: function(context, props){
            return context.time
@@ -764,11 +762,6 @@ require('resl')({
       src: './assets/crownsim.json',
       parser: JSON.parse
     },
-    crownSuga: {
-      type: 'text',
-      src: './assets/crownsim.json',
-      parser: JSON.parse
-    },
     cat: {
       type: 'text',
       src: './assets/cat.json',
@@ -779,9 +772,9 @@ require('resl')({
       src: './assets/beach.json',
       parser: JSON.parse
     },
-    beachLines: {
+    dolphin: {
       type: 'text',
-      src: './assets/beach.json',
+      src: './assets/golf.json',
       parser: JSON.parse
     },
     texture0: {
@@ -865,7 +858,7 @@ require('resl')({
 			floor: floor(regl),
 			boy: boy(regl, assets.singer),
 			boyPoints: boyPoints(regl, assets.singer),
-			dolphin: dolphin(regl),
+			dolphin: dolphin(regl, assets.dolphin),
       crown: crown(regl, assets.crown),
       crownSuga: crownSuga(regl, assets.crown),
       cat: cat(regl, assets.cat),

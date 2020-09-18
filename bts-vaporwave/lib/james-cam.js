@@ -15,9 +15,9 @@ function Camera (opts) {
   this.aspect = opts.width / opts.height
   this.near = 1
   this.far = 5000
-  this.position = [30,-5,-15]
+  this.position = [30,-4,-8]
   this.rotation = mat4.identity(new Float32Array(16))
-  this.rotation = mat4.rotateY(this.rotation, this.rotation, Math.PI-1.3)
+  this.rotation = mat4.rotateY(this.rotation, this.rotation, Math.PI-1.4)
   this.delta = {
     position: [0,0,0],
     rotation: mat4.identity(new Float32Array(16))

@@ -151,7 +151,7 @@ function floor (regl) {
       void main () {
         vnormal = normal;
         vpos = position;
-        float dx = snoise(vec3(vpos+(cos(time)+0.5)/0.5, sin(time + vpos.y)));
+        float dx = snoise(vec3(vpos+(cos(time*0.5)+0.5)/0.5, sin(time*0.5 + vpos.y)));
         float x = position.x + location.x;
         float y = 0.0 + location.y+dx;
         float z = position.y + location.z;
@@ -199,10 +199,10 @@ function plane (regl) {
     },
     attributes: {
       position: [
-        [-7,+10,-7],
-        [-7,-10,-7],
-        [-7,-10,+7],
-        [-7,+10,+7]
+        [-40,+10,-7],
+        [-40,-10,-7],
+        [-40,-10,+7],
+        [-40,+10,+7]
       ],
       uv: [
         [1.0, 0.0],
