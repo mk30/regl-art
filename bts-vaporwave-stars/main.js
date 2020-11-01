@@ -39,9 +39,15 @@ function drawGrid () {
 			uniform float time;
 			void main () {
 				float h = 0.7 + 0.5*(snoise(vec3(vpos,time*0.3))*0.5);
+        /*
 				float l = pow(max(
 					sin(vpos.x*128.0)*0.7+0.5,
 					sin(vpos.y*128.0)*0.7+0.5
+				),4.0);
+        */
+				float l = pow(max(
+					sin(vpos.x*128.0)*0.7+0.2*cos(time),
+					sin(vpos.y*128.0)*0.7+0.2*cos(time)
 				),4.0);
 				vec3 c = hsl2rgb(h,1.0,l*0.5);
 				gl_FragColor = vec4(c,l);
