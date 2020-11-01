@@ -38,11 +38,10 @@ function drawGrid () {
 			varying vec2 vpos;
 			uniform float time;
 			void main () {
-				float h = (snoise(vec3(vpos,time*0.3))*0.5+0.1)
-					 * (sin(time*0.1)*0.5+0.11) + (sin(time*0.2)*0.5+0.5);
+				float h = 0.7 + 0.5*(snoise(vec3(vpos,time*0.3))*0.5);
 				float l = pow(max(
-					sin(vpos.x*128.0)*0.9+0.5,
-					sin(vpos.y*128.0)*0.9+0.5
+					sin(vpos.x*128.0)*0.7+0.5,
+					sin(vpos.y*128.0)*0.7+0.5
 				),4.0);
 				vec3 c = hsl2rgb(h,1.0,l*0.5);
 				gl_FragColor = vec4(c,l);
@@ -55,7 +54,7 @@ function drawGrid () {
 			varying vec2 vpos;
 			void main () {
 				vpos = position;
-				vec3 p = vec3(position.x,-0.2,position.y)*50.0;
+				vec3 p = vec3(position.x,-0.2,position.y)*30.0;
 				gl_Position = projection * view * vec4(p,1);
 			}
 		`,
@@ -195,6 +194,7 @@ function drawBlob () {
     }
   })
 }
+/*
 function bg () {
   return regl({
     frag: glsl `
@@ -208,6 +208,48 @@ function bg () {
         0.5*snoise(vec3(1.0/uv, time*0.2));
         float l0 = pow(
           (snoise(vec3(uv*32.0,time*0.2))*0.5+0.5), 16.0);
+        vec3 c = hsl2rgb(h,1.0,l0);
+        gl_FragColor = vec4(c,length(c));
+      }
+
+		`,
+    vert: `
+      precision highp float;
+      attribute vec2 position;
+      varying vec2 uv;
+      void main () {
+        uv = position;
+        gl_Position = vec4(position,0,1);
+      }
+    `,
+    uniforms: {
+      time: regl.context('time')
+    },
+    attributes: {
+      position: [-4,-4,-4,4,4,0]
+    },
+    elements: [0,1,2],
+    count: 3,
+    depth: { enable: false, mask: false },
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    }
+  })
+}
+*/
+function bg () {
+  return regl({
+    frag: glsl `
+      precision highp float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/3d') 
+      #pragma glslify: hsl2rgb = require('glsl-hsl2rgb')
+      varying vec2 uv;
+      uniform float time;
+      void main () {
+        float h = 0.2*(snoise(vec3(uv,time*0.9))-1.5);
+        float l0 = pow(
+          (snoise(vec3(uv*32.0,time*0.2)+vec3(-time,0,0))*0.5+0.5), 16.0);
         vec3 c = hsl2rgb(h,1.0,l0);
         gl_FragColor = vec4(c,length(c));
       }
