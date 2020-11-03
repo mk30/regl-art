@@ -11,10 +11,9 @@ var sphere = require('icosphere')(5)
 var glsl = require('glslify')
 var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
-
-var feedback = require('regl-feedback')
-var fbtex = regl.texture()
 var teapot = require('teapot')
+
+var rmat = []
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -24,6 +23,181 @@ var cameraUniforms = regl({
     view: () => camera.view
   }
 })
+
+require('resl')({
+  manifest: {
+    seagull: {
+      type: 'text',
+      src: './assets/seagull.json',
+      parser: JSON.parse
+    },
+    texture0: {
+      type: 'image',
+      src: './assets/bamboo.png',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    }
+  },
+  onDone: (assets) => {
+    var draw = {
+      blob: drawBlob(),
+      creature: drawCreature(),
+      bg: bg(),
+      teapot: drawTeapot(),
+      seagull: seagull(regl, assets.seagull),
+      grid: drawGrid(),
+      vidwindow: vidwindow(regl)
+    }
+    var vidProps = [
+      {
+        texture: assets.texture0,
+        model: new Float32Array(16)
+      }
+    ]
+    regl.frame(function (time) {
+      regl.clear({ color: [0,0,0,1], depth: true })
+      draw.bg()
+      cameraUniforms(function () {
+        //draw.blob(blobs)
+        //draw.creature(creatures)
+        //draw.teapot(teapots)
+        draw.seagull(camera.props)
+        draw.grid()
+        var m = vidProps[0].model
+        mat4.identity(m)
+        mat4.scale(m, m, [0.8, 0.8, 0.8])
+        mat4.translate(m, m, [0,2,0])
+        draw.vidwindow(vidProps)
+      })
+      camera.update()
+    })
+  }
+})
+
+function seagull (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t/20.0)))*0.1+0.7);
+        //vec3 p = vnormal+0.5/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
+        float cross = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        gl_FragColor = vec4(p*cross, 0.5+sin(t));
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+        //gl_PointSize = 10.0*sin(t);
+        gl_PointSize = 1.0*sin(t);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: function(context, props){
+        var t = context.time
+        mat4.identity(rmat)
+        mat4.scale(rmat, rmat,[5,5,5])
+        mat4.rotateY(rmat, rmat, -t)
+        mat4.rotateZ(rmat, rmat, 0.5*Math.sin(t*2))
+        mat4.translate(rmat, rmat, [0, 0.4*Math.sin(t*2),0])
+        return rmat
+      },
+      //projection: regl.prop('projection'),
+      //view: regl.prop('view')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
+function vidwindow (regl) {
+  return regl({
+    frag: glsl`
+      precision highp float;
+      varying vec2 vuv;
+      uniform float time;
+      uniform sampler2D tex;
+      void main () {
+        float y = floor(mod(vuv.y*50.0, 2.0));
+        float x = floor(mod(vuv.x*50.0+y, 2.0));
+        vec4 t = texture2D(tex, vuv);
+        vec4 bg = mix(vec4(0,0,1,1), vec4(0,1,0,1), x);
+        float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
+        vec4 flickmix = mix(bg, t, step(flick, 0.8));
+        gl_FragColor = mix(t, flickmix, t.w);       
+        //gl_FragColor = texture2D(tex, vuv);
+      }
+    `,
+    vert: glsl`
+      precision highp float;
+      uniform mat4 projection, view, model;
+      attribute vec3 position;
+      attribute vec2 uv;
+      varying vec3 vpos;
+      varying vec2 vuv;
+      void main () {
+        vpos = position;
+        vuv = uv;
+        gl_Position = projection * view * model * vec4(position,1);
+      }
+    `,
+    uniforms: {
+      time: regl.context('time'),
+      tex: regl.prop('texture'),
+      model: regl.prop('model')
+    },
+    attributes: {
+      position: [
+        [0,+10,-7],
+        [0,-10,-7],
+        [0,-10,+7],
+        [0,+10,+7]
+      ],
+      uv: [
+        [1.0, 0.0],
+        [1.0, 1.0],
+        [0.0, 1.0],
+        [0.0, 0.0]
+      ],
+    },
+    elements: [[0,1,2],[0,2,3]],
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    depth: {
+      mask: false
+    }
+  })
+}
 
 function drawGrid () {
   var mesh = {
@@ -49,8 +223,11 @@ function drawGrid () {
 					sin(vpos.x*128.0)*0.7+0.2*cos(time),
 					sin(vpos.y*128.0)*0.7+0.2*cos(time)
 				),4.0);
-				vec3 c = hsl2rgb(h,1.0,l*0.5);
-				gl_FragColor = vec4(c,l);
+        float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
+        flick = step(0.8, flick);
+				vec4 c = vec4(hsl2rgb(h,1.0,l*0.5), l);
+        c += vec4(0,1,1,1)*(1.0-smoothstep(0.0, 0.4, length(vpos)))*flick;
+				gl_FragColor = c;
 			}
 		`,
     vert: glsl `
@@ -282,6 +459,9 @@ function bg () {
     blend: {
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    depth: {
+      mask: false
     }
   })
 }
@@ -340,25 +520,6 @@ function drawCreature () {
   })
 }
 
-var draw = {
-  blob: drawBlob(),
-  creature: drawCreature(),
-  bg: bg(),
-  teapot: drawTeapot(),
-  grid: drawGrid(),
-  fb: feedback(regl, glsl `
-		#pragma glslify: snoise = require('glsl-noise/simplex/3d') 
-    uniform float time;
-    vec3 sample (vec2 uv, sampler2D tex) {
-      vec2 xy = uv + uv*snoise(vec3(uv,time*8.0))*0.04;
-      float q = 256.0;
-      xy = floor(xy*q+0.5)/q;
-      //  + mod(floor(time),2.0)*floor(uv*32.0+0.5)/32.0;
-      vec3 c = 0.97*texture2D(tex, (0.99*(2.0*xy-1.0)+1.0)*0.5).rgb;
-      return c;
-    }
-	`)
-}
 var setFB = regl({
   uniforms: {
     time: regl.context('time')
@@ -387,19 +548,3 @@ for (var i = 0; i < 50; i++) {
   var z = (Math.random()*2-1)*100
   creatures.push({ offset: [x,y,z], iobj: i+1 })
 }
-regl.frame(function () {
-  regl.clear({ color: [0,0,0,1], depth: true })
-  /*
-  setFB(function () {
-    draw.fb({ texture: fbtex })
-  })
-  */
-  draw.bg()
-  cameraUniforms(function () {
-    //draw.blob(blobs)
-    //draw.creature(creatures)
-    //draw.teapot(teapots)
-    draw.grid()
-  })
-  camera.update()
-})
