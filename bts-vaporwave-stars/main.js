@@ -13,8 +13,6 @@ var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var teapot = require('teapot')
 
-var rmat = []
-
 require('./lib/keys.js')(camera, document.body)
 
 var cameraUniforms = regl({
@@ -58,14 +56,36 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
-    regl.frame(function (time) {
+    var seagullProps = [
+      {
+        model: new Float32Array(16)
+      },
+      {
+        model: new Float32Array(16)
+      }
+    ]
+    regl.frame(function ({ time }) {
       regl.clear({ color: [0,0,0,1], depth: true })
       draw.bg()
       cameraUniforms(function () {
         //draw.blob(blobs)
         //draw.creature(creatures)
         //draw.teapot(teapots)
-        draw.seagull(camera.props)
+        var s = seagullProps[0].model
+        mat4.identity(s)
+        mat4.scale(s, s,[5,5,5])
+        mat4.rotateY(s, s, -time)
+        mat4.rotateZ(s, s, 0.3*Math.sin(time*2))
+        mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
+        s = seagullProps[1].model
+        mat4.identity(s)
+        mat4.scale(s, s,[5,5,5])
+        mat4.rotateY(s, s, Math.PI)
+        mat4.translate(s, s, [2, 0, 0])
+        mat4.rotateY(s, s, -time)
+        mat4.rotateZ(s, s, 0.4*Math.sin(time))
+        //mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
+        draw.seagull(seagullProps)
         draw.grid()
         var m = vidProps[0].model
         mat4.identity(m)
@@ -86,13 +106,12 @@ function seagull (regl, mesh){
       varying vec3 vnormal, vpos;
       uniform float t;
       void main () {
-        vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t/20.0)))*0.1+0.7);
-        //vec3 p = vnormal+0.5/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
-        float cross = abs(max(
+        vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t/20.0)))+0.7);
+        float c = abs(max(
           max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
           sin(p.x*10.0)
           ));
-        gl_FragColor = vec4(p*cross, 0.5+sin(t));
+        gl_FragColor = vec4(p*c, abs(sin(t*4.0)));
       }`,
     vert: glsl`
       precision mediump float;
@@ -105,8 +124,6 @@ function seagull (regl, mesh){
         vpos = position;
         gl_Position = projection * view * model *
         vec4(position, 1.0);
-        //gl_PointSize = 10.0*sin(t);
-        gl_PointSize = 1.0*sin(t);
       }`,
     attributes: {
       position: mesh.positions,
@@ -117,17 +134,7 @@ function seagull (regl, mesh){
       t: function(context, props){
            return context.time
          },
-      model: function(context, props){
-        var t = context.time
-        mat4.identity(rmat)
-        mat4.scale(rmat, rmat,[5,5,5])
-        mat4.rotateY(rmat, rmat, -t)
-        mat4.rotateZ(rmat, rmat, 0.5*Math.sin(t*2))
-        mat4.translate(rmat, rmat, [0, 0.4*Math.sin(t*2),0])
-        return rmat
-      },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
+      model: regl.prop('model')
     },
     primitive: "triangles",
     blend: {
