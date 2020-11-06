@@ -60,6 +60,16 @@ require('resl')({
         mag: 'linear',
         min: 'linear'
       })
+    },
+    texturebrick: {
+      type: 'image',
+      src: './assets/brickwall.jpg',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
     }
   },
   onDone: (assets) => {
@@ -84,6 +94,14 @@ require('resl')({
     var wallProps = [
       {
         texture: assets.texturecw,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texturecw,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texturebrick,
         model: new Float32Array(16)
       }
     ]
@@ -140,7 +158,7 @@ require('resl')({
         var c = cubeProps[0].model
         mat4.identity(c)
         mat4.translate(c, c, [-20, -1, -20])
-        mat4.rotateY(c, c, Math.PI/6)
+        //mat4.rotateY(c, c, Math.PI/6)
         mat4.scale(c, c, [15,10,20])
         draw.cube(cubeProps)
         draw.grid()
@@ -148,6 +166,15 @@ require('resl')({
         mat4.identity(cw)
         mat4.scale(cw, cw, [0.8, 0.8, 0.8])
         mat4.translate(cw, cw, [0,3,0])
+        cw = wallProps[2].model
+        mat4.identity(cw)
+        mat4.scale(cw, cw, [2.5, 2.0, 2.0])
+        mat4.translate(cw, cw, [-12,3,-8])
+        cw = wallProps[1].model
+        mat4.identity(cw)
+        mat4.scale(cw, cw, [2.0, 2.0, 2.0])
+        mat4.translate(cw, cw, [-8,3,-15])
+        mat4.rotateY(cw, cw, Math.PI/2)
         draw.wall(wallProps)
         var m = vidProps[0].model
         mat4.identity(m)
