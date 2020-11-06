@@ -1,8 +1,4 @@
 var regl = require('regl')()
-/*
-var camera = require('regl-camera')(regl,
-  { distance: 32, theta: 1.6, phi: 0.2 })
-*/
 var camera = require('./lib/james-cam.js')({
   width: window.innerWidth,
   height: window.innerHeight
@@ -12,6 +8,7 @@ var glsl = require('glslify')
 var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var teapot = require('teapot')
+var extrudeByPath = require('extrude-by-path')
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -29,9 +26,34 @@ require('resl')({
       src: './assets/seagull.json',
       parser: JSON.parse
     },
+    cube: {
+      type: 'text',
+      src: './assets/cube.json',
+      parser: JSON.parse
+    },
     texture0: {
       type: 'image',
       src: './assets/bamboo.png',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texture1: {
+      type: 'image',
+      src: './assets/wall.jpg',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texturecw: {
+      type: 'image',
+      src: './assets/concretewall.jpg',
       stream: true,
       parser: (data) => regl.texture({
         data: data,
@@ -46,7 +68,10 @@ require('resl')({
       creature: drawCreature(),
       bg: bg(),
       teapot: drawTeapot(),
+      neon: neon(regl),
       seagull: seagull(regl, assets.seagull),
+      cube: cube(regl, assets.cube),
+      wall: wall(regl),
       grid: drawGrid(),
       vidwindow: vidwindow(regl)
     }
@@ -56,11 +81,31 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
+    var wallProps = [
+      {
+        texture: assets.texturecw,
+        model: new Float32Array(16)
+      }
+    ]
+    /*
+    var neonProps = extrude(require('./assets/luckycat.json'))
+    neonProps.model = new Float32Array(16)
+    */
+    var neonProps = Object.assign(
+      extrude(require('./assets/luckycat.json')),
+      { model: new Float32Array(16) }
+    )
     var seagullProps = [
       {
         model: new Float32Array(16)
       },
       {
+        model: new Float32Array(16)
+      }
+    ]
+    var cubeProps = [
+      {
+        texture: assets.texture1,
         model: new Float32Array(16)
       }
     ]
@@ -71,6 +116,12 @@ require('resl')({
         //draw.blob(blobs)
         //draw.creature(creatures)
         //draw.teapot(teapots)
+        var n = neonProps.model
+        mat4.identity(n)
+        mat4.rotateY(n, n, Math.PI/2)
+        mat4.translate(n, n, [18, 16, -15])
+        mat4.scale(n, n, [5,5,5])
+        draw.neon(neonProps)
         var s = seagullProps[0].model
         mat4.identity(s)
         mat4.scale(s, s,[5,5,5])
@@ -86,7 +137,18 @@ require('resl')({
         mat4.rotateZ(s, s, 0.4*Math.sin(time))
         //mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
         draw.seagull(seagullProps)
+        var c = cubeProps[0].model
+        mat4.identity(c)
+        mat4.translate(c, c, [-20, -1, -20])
+        mat4.rotateY(c, c, Math.PI/6)
+        mat4.scale(c, c, [15,10,20])
+        draw.cube(cubeProps)
         draw.grid()
+        var cw = wallProps[0].model
+        mat4.identity(cw)
+        mat4.scale(cw, cw, [0.8, 0.8, 0.8])
+        mat4.translate(cw, cw, [0,3,0])
+        draw.wall(wallProps)
         var m = vidProps[0].model
         mat4.identity(m)
         mat4.scale(m, m, [0.8, 0.8, 0.8])
@@ -97,6 +159,96 @@ require('resl')({
     })
   }
 })
+
+function extrude(lines) {
+  var meshes = []
+  for (var i = 0; i < lines.length; i++) {
+    var path = []
+    var s = 0.01
+    for (var j = 0; j < lines[i].length; j++) {
+      path.push([
+        lines[i][j][0]*s*2-2,
+        3-2*lines[i][j][1]*s,
+        0
+      ])
+    }
+    var positions = [], cells = [], edges = []
+    var n = 6
+    for (var j = 0; j < n; j++) {
+      var theta = j/(n-1)*2*Math.PI
+      var r = 0.04
+      positions.push([Math.cos(theta)*r,Math.sin(theta)*r])
+    }
+    for (var j = 0; j < positions.length-1; j++) {
+      edges.push([j,j+1])
+    }
+    meshes.push(extrudeByPath({
+      positions,
+      cells,
+      edges,
+      path
+    }))
+  }
+  var mesh = { positions: [], cells: [], lines: [] }
+  for (var i = 0; i < meshes.length; i++) {
+    var k = mesh.positions.length
+    var m = meshes[i]
+    for (var j = 0; j < m.positions.length; j++) {
+      mesh.positions.push(m.positions[j])
+      mesh.lines.push(i)
+    }
+    for (var j = 0; j < m.cells.length; j++) {
+      mesh.cells.push([
+        k+m.cells[j][0],
+        k+m.cells[j][1],
+        k+m.cells[j][2]
+      ])
+    }
+  }
+  return mesh
+}
+
+function neon(regl) {
+  return regl({
+    frag: `
+      precision highp float;
+      varying vec3 vpos;
+      varying float vline;
+      uniform float time;
+      void main() {
+        float v = vline + 0.5;
+        float x = step(1.0,v) * step(v,2.0);
+        x = max(x, step(8.0,v) * step(v,9.0));
+        float y = step(3.0,v) * step(v,4.0);
+        y = max(y, step(9.0,v) * step(v,10.0));
+        float m = mix(x,y,floor(mod(time*2.0,2.0)));
+        gl_FragColor = vec4(1.0-m*0.8,0,0,1);
+      }
+    `,
+    vert: `
+      precision highp float;
+      uniform mat4 projection, view, model;
+      attribute vec3 position;
+      attribute float line;
+      varying vec3 vpos;
+      varying float vline;
+      void main() {
+        vpos = position;
+        vline = line;
+        gl_Position = projection * view * model * vec4(vpos,1);
+      }
+    `,
+    attributes: {
+      position: regl.prop('positions'),
+      line: regl.prop('lines')
+    },
+    elements: regl.prop('cells'),
+    uniforms: {
+      time: regl.context('time'),
+      model: regl.prop('model')
+    }
+  })
+}
 
 function seagull (regl, mesh){
   return regl({
@@ -142,6 +294,116 @@ function seagull (regl, mesh){
       func: { src: 'src alpha', dst: 'one minus src alpha' }
     },
     cull: { enable: true }
+  })
+}
+
+function cube (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      varying vec2 vuv;
+      uniform sampler2D texture;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        //gl_FragColor = vec4(p*c, abs(sin(t*4.0)));
+        gl_FragColor = texture2D(texture, vuv);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec2 uv;
+      varying vec2 vuv;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        vuv = uv;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions),
+      uv: mesh.uv
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: regl.prop('model'),
+      texture: regl.prop('texture'),
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
+function wall (regl) {
+  return regl({
+    frag: glsl`
+      precision highp float;
+      varying vec2 vuv;
+      uniform float time;
+      uniform sampler2D texture;
+      void main () {
+        float y = floor(mod(vuv.y*50.0, 2.0));
+        float x = floor(mod(vuv.x*50.0+y, 2.0));
+        vec4 t = texture2D(texture, vuv);
+        vec4 bg = mix(vec4(0,0,1,1), vec4(0,1,0,1), x);
+        float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
+        vec4 flickmix = mix(bg, t, step(flick, 0.8));
+        //gl_FragColor = mix(t, flickmix, t.w);       
+        gl_FragColor = t;
+      }
+    `,
+    vert: glsl`
+      precision highp float;
+      uniform mat4 projection, view, model;
+      attribute vec3 position;
+      attribute vec2 uv;
+      varying vec3 vpos;
+      varying vec2 vuv;
+      void main () {
+        vpos = position;
+        vuv = uv;
+        gl_Position = projection * view * model * vec4(position,1);
+      }
+    `,
+    uniforms: {
+      time: regl.context('time'),
+      texture: regl.prop('texture'),
+      model: regl.prop('model')
+    },
+    attributes: {
+      position: [
+        [0,+10,-7],
+        [0,-10,-7],
+        [0,-10,+7],
+        [0,+10,+7]
+      ],
+      uv: [
+        [1.0, 0.0],
+        [1.0, 1.0],
+        [0.0, 1.0],
+        [0.0, 0.0]
+      ],
+    },
+    elements: [[0,1,2],[0,2,3]],
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    depth: {
+      mask: false
+    }
   })
 }
 
@@ -220,12 +482,6 @@ function drawGrid () {
 			uniform float time;
 			void main () {
 				float h = 0.7 + 0.5*(snoise(vec3(vpos,time*0.3))*0.5);
-        /*
-				float l = pow(max(
-					sin(vpos.x*128.0)*0.7+0.5,
-					sin(vpos.y*128.0)*0.7+0.5
-				),4.0);
-        */
 				float l = pow(max(
 					sin(vpos.x*128.0)*0.7+0.2*cos(time),
 					sin(vpos.y*128.0)*0.7+0.2*cos(time)
@@ -233,6 +489,7 @@ function drawGrid () {
         float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
         flick = step(0.8, flick);
 				vec4 c = vec4(hsl2rgb(h,1.0,l*0.5), l);
+        c += vec4(1,0,0,1)*(1.0-smoothstep(0.0, 0.9, length(vpos + vec2(0.5, 0.6))));
         c += vec4(0,1,1,1)*(1.0-smoothstep(0.0, 0.4, length(vpos)))*flick;
 				gl_FragColor = c;
 			}
