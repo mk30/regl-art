@@ -165,7 +165,8 @@ require('resl')({
         var cw = wallProps[0].model
         mat4.identity(cw)
         mat4.scale(cw, cw, [0.8, 0.8, 0.8])
-        mat4.translate(cw, cw, [0,3,0])
+        mat4.rotateY(cw, cw, Math.PI/2)
+        mat4.translate(cw, cw, [-35,2,-20])
         cw = wallProps[2].model
         mat4.identity(cw)
         mat4.scale(cw, cw, [2.5, 2.0, 2.0])
@@ -179,7 +180,8 @@ require('resl')({
         var m = vidProps[0].model
         mat4.identity(m)
         mat4.scale(m, m, [0.8, 0.8, 0.8])
-        mat4.translate(m, m, [0,2,0])
+        mat4.rotateY(m, m, Math.PI/2)
+        mat4.translate(m, m, [-35,2,-20])
         draw.vidwindow(vidProps)
       })
       camera.update()
@@ -517,7 +519,8 @@ function drawGrid () {
         flick = step(0.8, flick);
 				vec4 c = vec4(hsl2rgb(h,1.0,l*0.5), l);
         c += vec4(1,0,0,1)*(1.0-smoothstep(0.0, 0.9, length(vpos + vec2(0.5, 0.6))));
-        c += vec4(0,1,1,1)*(1.0-smoothstep(0.0, 0.4, length(vpos)))*flick;
+        c += vec4(0,1,1,1)*(1.0-smoothstep(0.0, 0.4,
+        length(vpos-vec2(-0.5,0.9))))*flick;
 				gl_FragColor = c;
 			}
 		`,
