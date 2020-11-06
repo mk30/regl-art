@@ -249,6 +249,7 @@ function neon(regl) {
         float y = step(3.0,v) * step(v,4.0);
         y = max(y, step(9.0,v) * step(v,10.0));
         float m = mix(x,y,floor(mod(time*2.0,2.0)));
+        //gl_FragColor = vec4(1.0-m*0.8,0.5-m*0.5,0.5-m*0.5,1);
         gl_FragColor = vec4(1.0-m*0.8,0,0,1);
       }
     `,
@@ -378,16 +379,15 @@ function wall (regl) {
     frag: glsl`
       precision highp float;
       varying vec2 vuv;
+      varying vec3 vpos;
       uniform float time;
       uniform sampler2D texture;
       void main () {
         float y = floor(mod(vuv.y*50.0, 2.0));
         float x = floor(mod(vuv.x*50.0+y, 2.0));
         vec4 t = texture2D(texture, vuv);
-        vec4 bg = mix(vec4(0,0,1,1), vec4(0,1,0,1), x);
-        float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
-        vec4 flickmix = mix(bg, t, step(flick, 0.8));
-        //gl_FragColor = mix(t, flickmix, t.w);       
+        t += 0.5*vec4(1,0,0,1)*(1.0-smoothstep(0.0, 12.0, length(vpos + vec3(0.0,-5.0,0.0))));
+        //gl_FragColor = glow;
         gl_FragColor = t;
       }
     `,
@@ -448,7 +448,7 @@ function vidwindow (regl) {
         vec4 bg = mix(vec4(0,0,1,1), vec4(0,1,0,1), x);
         float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
         vec4 flickmix = mix(bg, t, step(flick, 0.8));
-        gl_FragColor = mix(t, flickmix, t.w);       
+        gl_FragColor = mix(t, flickmix, t.w);
         //gl_FragColor = texture2D(tex, vuv);
       }
     `,
