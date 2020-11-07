@@ -41,9 +41,29 @@ require('resl')({
         min: 'linear'
       })
     },
-    texture1: {
+    texturegraffiti: {
       type: 'image',
       src: './assets/wall.jpg',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texturecactusleft: {
+      type: 'image',
+      src: './assets/bldgleft.jpg',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
+    texturecactusright: {
+      type: 'image',
+      src: './assets/bldgright.jpg',
       stream: true,
       parser: (data) => regl.texture({
         data: data,
@@ -123,7 +143,15 @@ require('resl')({
     ]
     var cubeProps = [
       {
-        texture: assets.texture1,
+        texture: assets.texturegraffiti,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texturecactusleft,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texturecactusright,
         model: new Float32Array(16)
       }
     ]
@@ -160,6 +188,16 @@ require('resl')({
         mat4.translate(c, c, [-20, -1, -20])
         //mat4.rotateY(c, c, Math.PI/6)
         mat4.scale(c, c, [15,10,20])
+        var c1 = cubeProps[1].model
+        mat4.identity(c1)
+        mat4.translate(c1, c1, [22, -1, 20])
+        mat4.rotateY(c, c, Math.PI/2)
+        mat4.scale(c1, c1, [15,10,10])
+        var c2 = cubeProps[2].model
+        mat4.identity(c2)
+        mat4.translate(c2, c2, [7, 4, 22])
+        mat4.rotateY(c, c, Math.PI/2)
+        mat4.scale(c2, c2, [15,20,10])
         draw.cube(cubeProps)
         draw.grid()
         var cw = wallProps[0].model
