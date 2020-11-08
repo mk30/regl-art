@@ -95,6 +95,16 @@ require('resl')({
         mag: 'linear',
         min: 'linear'
       })
+    },
+    brokenwall: {
+      type: 'image',
+      src: './assets/brokenwall.png',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
     }
   },
   onDone: (assets) => {
@@ -128,6 +138,10 @@ require('resl')({
       },
       {
         texture: assets.texturebrick,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.brokenwall,
         model: new Float32Array(16)
       }
     ]
@@ -231,6 +245,9 @@ require('resl')({
         mat4.scale(cw, cw, [2.0, 2.0, 2.0])
         mat4.translate(cw, cw, [-8,3,-15])
         mat4.rotateY(cw, cw, Math.PI/2)
+        cw = wallProps[3].model
+        mat4.identity(cw)
+        mat4.translate(cw, cw, [-30,0,5])
         draw.wall(wallProps)
         var m = vidProps[0].model
         mat4.identity(m)
