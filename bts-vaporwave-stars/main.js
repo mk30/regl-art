@@ -9,7 +9,7 @@ var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var teapot = require('teapot')
 var extrudeByPath = require('extrude-by-path')
-var planeMesh = require('grid-mesh')(10, 30)
+var planeMesh = require('grid-mesh')(15, 10)
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -102,6 +102,16 @@ require('resl')({
         min: 'linear'
       })
     },
+    wallmix: {
+      type: 'image',
+      src: './assets/wallmix.jpg',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
+    },
     brokenwall: {
       type: 'image',
       src: './assets/brokenwall.png',
@@ -124,6 +134,7 @@ require('resl')({
       garbage: garbage(regl, assets.garbage),
       houseruins: houseruins(regl, assets.houseruins),
       cube: cube(regl, assets.cube),
+      redWall: redWall(regl),
       wall: wall(regl),
       river: river(regl),
       grid: drawGrid(),
@@ -135,17 +146,23 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
-    var wallProps = [
-      {
-        texture: assets.texturecw,
-        model: new Float32Array(16)
-      },
+    var redWallProps = [
       {
         texture: assets.texturecw,
         model: new Float32Array(16)
       },
       {
         texture: assets.texturebrick,
+        model: new Float32Array(16)
+      }
+    ]
+    var wallProps = [
+      {
+        texture: assets.wallmix,
+        model: new Float32Array(16)
+      },
+      {
+        texture: assets.texturecw,
         model: new Float32Array(16)
       },
       {
@@ -208,8 +225,8 @@ require('resl')({
         //draw.teapot(teapots)
         var r = riverProps[0].model
         mat4.identity(r)
-        mat4.translate(r, r, [-32,-6,-17])
-        mat4.rotateZ(r, r, 3*Math.PI/4)
+        mat4.translate(r, r, [-32,-6,0])
+        mat4.rotateZ(r, r, Math.PI/2)
         draw.river(riverProps)
         var n = neonProps.model
         mat4.identity(n)
@@ -261,23 +278,29 @@ require('resl')({
         mat4.scale(c2, c2, [15,20,10])
         draw.cube(cubeProps)
         draw.grid()
-        var cw = wallProps[0].model
-        mat4.identity(cw)
-        mat4.scale(cw, cw, [0.8, 0.8, 0.8])
-        mat4.rotateY(cw, cw, Math.PI/2)
-        mat4.translate(cw, cw, [-35,2,-20])
-        cw = wallProps[2].model
-        mat4.identity(cw)
-        mat4.scale(cw, cw, [2.5, 2.0, 2.0])
-        mat4.translate(cw, cw, [-12,3,-8])
-        cw = wallProps[1].model
-        mat4.identity(cw)
-        mat4.scale(cw, cw, [2.0, 2.0, 2.0])
-        mat4.translate(cw, cw, [-8,3,-15])
-        mat4.rotateY(cw, cw, Math.PI/2)
-        cw = wallProps[3].model
-        mat4.identity(cw)
-        mat4.translate(cw, cw, [-30,0,5])
+        var rw = redWallProps[0].model
+        mat4.identity(rw)
+        mat4.scale(rw, rw, [2.0, 2.0, 2.0])
+        mat4.translate(rw, rw, [-8,3,-15])
+        mat4.rotateY(rw, rw, Math.PI/2)
+        rw = redWallProps[1].model
+        mat4.identity(rw)
+        mat4.scale(rw, rw, [2.5, 2.0, 2.0])
+        mat4.translate(rw, rw, [-12,3,-8])
+        draw.redWall(redWallProps)
+        var w = wallProps[0].model
+        mat4.identity(w)
+        mat4.scale(w, w, [1.0, 1.0, 1.5])
+        mat4.rotateY(w, w, Math.PI/2)
+        mat4.translate(w, w, [-19,0,-7])
+        var w = wallProps[1].model
+        mat4.identity(w)
+        mat4.scale(w, w, [0.8, 0.8, 0.8])
+        mat4.rotateY(w, w, Math.PI/2)
+        mat4.translate(w, w, [-35,2,-20])
+        w = wallProps[2].model
+        mat4.identity(w)
+        mat4.translate(w, w, [-30,0,5])
         draw.wall(wallProps)
         var m = vidProps[0].model
         mat4.identity(m)
@@ -574,7 +597,7 @@ function cube (regl, mesh){
   })
 }
 
-function wall (regl) {
+function redWall (regl) {
   return regl({
     frag: glsl`
       precision highp float;
@@ -588,6 +611,63 @@ function wall (regl) {
         vec4 t = texture2D(texture, vuv);
         t += 0.5*vec4(1,0,0,1)*(1.0-smoothstep(0.0, 12.0, length(vpos + vec3(0.0,-5.0,0.0))));
         //gl_FragColor = glow;
+        gl_FragColor = t;
+      }
+    `,
+    vert: glsl`
+      precision highp float;
+      uniform mat4 projection, view, model;
+      attribute vec3 position;
+      attribute vec2 uv;
+      varying vec3 vpos;
+      varying vec2 vuv;
+      void main () {
+        vpos = position;
+        vuv = uv;
+        gl_Position = projection * view * model * vec4(position,1);
+      }
+    `,
+    uniforms: {
+      time: regl.context('time'),
+      texture: regl.prop('texture'),
+      model: regl.prop('model')
+    },
+    attributes: {
+      position: [
+        [0,+10,-7],
+        [0,-10,-7],
+        [0,-10,+7],
+        [0,+10,+7]
+      ],
+      uv: [
+        [1.0, 0.0],
+        [1.0, 1.0],
+        [0.0, 1.0],
+        [0.0, 0.0]
+      ],
+    },
+    elements: [[0,1,2],[0,2,3]],
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    depth: {
+      mask: false
+    }
+  })
+}
+function wall (regl) {
+  return regl({
+    frag: glsl`
+      precision highp float;
+      varying vec2 vuv;
+      varying vec3 vpos;
+      uniform float time;
+      uniform sampler2D texture;
+      void main () {
+        float y = floor(mod(vuv.y*50.0, 2.0));
+        float x = floor(mod(vuv.x*50.0+y, 2.0));
+        vec4 t = texture2D(texture, vuv);
         gl_FragColor = t;
       }
     `,
@@ -739,7 +819,8 @@ function river (regl) {
       location: regl.prop('location'),
       model: regl.prop('model')
     },
-    elements: planeMesh.cells
+    elements: planeMesh.cells,
+    primitive: "line loop",
   })
 }
 
