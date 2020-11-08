@@ -9,6 +9,7 @@ var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var teapot = require('teapot')
 var extrudeByPath = require('extrude-by-path')
+var planeMesh = require('grid-mesh')(10, 30)
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -29,6 +30,11 @@ require('resl')({
     garbage: {
       type: 'text',
       src: './assets/garbageset.json',
+      parser: JSON.parse
+    },
+    houseruins: {
+      type: 'text',
+      src: './assets/houseruins.json',
       parser: JSON.parse
     },
     cube: {
@@ -116,8 +122,10 @@ require('resl')({
       neon: neon(regl),
       seagull: seagull(regl, assets.seagull),
       garbage: garbage(regl, assets.garbage),
+      houseruins: houseruins(regl, assets.houseruins),
       cube: cube(regl, assets.cube),
       wall: wall(regl),
+      river: river(regl),
       grid: drawGrid(),
       vidwindow: vidwindow(regl)
     }
@@ -166,6 +174,11 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
+    var houseruinsProps = [
+      {
+        model: new Float32Array(16)
+      }
+    ]
     var cubeProps = [
       {
         texture: assets.texturegraffiti,
@@ -180,6 +193,12 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
+    var riverProps = [
+      {
+        location: [0, 0, 0],
+        model: new Float32Array(16)
+      }
+    ]
     regl.frame(function ({ time }) {
       regl.clear({ color: [0,0,0,1], depth: true })
       draw.bg()
@@ -187,6 +206,11 @@ require('resl')({
         //draw.blob(blobs)
         //draw.creature(creatures)
         //draw.teapot(teapots)
+        var r = riverProps[0].model
+        mat4.identity(r)
+        mat4.translate(r, r, [-32,-6,-17])
+        mat4.rotateZ(r, r, 3*Math.PI/4)
+        draw.river(riverProps)
         var n = neonProps.model
         mat4.identity(n)
         mat4.rotateY(n, n, Math.PI/2)
@@ -214,6 +238,12 @@ require('resl')({
         mat4.translate(g, g, [0,-10,-38])
         mat4.rotateY(g,g,-Math.PI/4)
         draw.garbage(garbageProps)
+        var h = houseruinsProps[0].model
+        mat4.identity(h)
+        mat4.translate(h, h, [-10,6,30])
+        mat4.scale(h, h, [7,7,7])
+        mat4.rotateY(h, h, -Math.PI/2)
+        draw.houseruins(houseruinsProps)
         var c = cubeProps[0].model
         mat4.identity(c)
         mat4.translate(c, c, [-20, -1, -20])
@@ -447,6 +477,54 @@ function garbage (regl, mesh){
   })
 }
 
+function houseruins (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos,t/8.0))+0.3);
+        float c = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
+        gl_FragColor = vec4(p*c, 1.0);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: regl.prop('model')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
 function cube (regl, mesh){
   return regl({
     frag: glsl`
@@ -614,6 +692,54 @@ function vidwindow (regl) {
     depth: {
       mask: false
     }
+  })
+}
+
+function river (regl) {
+  return regl({
+    frag: glsl`
+      precision highp float;
+      uniform float time;
+      varying vec2 vpos;
+      vec3 hsl2rgb(in vec3 hsl) {
+        vec3 rgb = clamp(abs(mod(hsl.x*6.0+vec3(0.0,4.0,2.0),6.0)-3.0)-1.0,0.0,1.0);
+        return hsl.z+hsl.y*(rgb-0.5)*(1.0-abs(2.0*hsl.z-1.0));
+      }
+      void main () {
+        vec3 c = hsl2rgb(vec3(1.0-sin(time)+cos(vpos.x+vpos.y),0.6,0.5)); 
+        gl_FragColor = vec4(c, 1.0);
+      }
+    `,
+    vert: glsl`
+      #pragma glslify: snoise = require('glsl-noise/simplex/3d')
+      precision highp float;
+      uniform mat4 projection, view, model;
+      uniform float time;
+      uniform vec3 location;
+      attribute vec2 position, normal;
+      varying vec2 vnormal, vpos, dvpos;
+      varying float vtime;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        //float dx = snoise(vec3(vpos*0.3+(cos(time*0.5)+0.5), sin(time)));
+        float dx = snoise(vec3(vpos*0.1, 0.1*sin(time*4.0 + vpos.y)));
+        float x = position.x + location.x;
+        float y = 0.0 + location.y+2.0*dx;
+        float z = position.y + location.z;
+        gl_Position = projection * view * model * vec4(x, y, z, 1.0);
+      }
+    `,
+    attributes: {
+      position: planeMesh.positions,
+      normal: anormals(planeMesh.cells, planeMesh.positions)
+    },
+    uniforms: {
+      time: regl.context('time'),
+      location: regl.prop('location'),
+      model: regl.prop('model')
+    },
+    elements: planeMesh.cells
   })
 }
 
