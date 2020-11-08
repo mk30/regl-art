@@ -9,7 +9,7 @@ var anormals = require('angle-normals')
 var mat4 = require('gl-mat4')
 var teapot = require('teapot')
 var extrudeByPath = require('extrude-by-path')
-var planeMesh = require('grid-mesh')(15, 10)
+var planeMesh = require('grid-mesh')(15, 12)
 
 require('./lib/keys.js')(camera, document.body)
 
@@ -261,7 +261,7 @@ require('resl')({
         //draw.teapot(teapots)
         var r = riverProps[0].model
         mat4.identity(r)
-        mat4.translate(r, r, [-32,-6,0])
+        mat4.translate(r, r, [-32,-6,-2])
         mat4.rotateZ(r, r, Math.PI/2)
         draw.river(riverProps)
         var n = neonProps.model
@@ -288,13 +288,13 @@ require('resl')({
         var p = palletProps[0].model
         mat4.identity(p)
         mat4.scale(p, p, [0.4,0.4,0.4])
-        mat4.translate(p, p, [-5,-15,-63])
+        mat4.translate(p, p, [-5,-16,-63])
         mat4.rotateY(p, p, Math.PI/5)
         draw.pallets(palletProps)
         var d = dumpsterProps[0].model
         mat4.identity(d)
         mat4.scale(d, d, [0.4,0.4,0.4])
-        mat4.translate(d, d, [-17,-15,-58])
+        mat4.translate(d, d, [-17,-16,-58])
         mat4.rotateY(d,d,-Math.PI/5)
         draw.dumpster(dumpsterProps)
         var h = houseruinsProps[0].model
@@ -521,7 +521,8 @@ function dumpster (regl, mesh){
           sin(p.x*10.0)
           ));
         //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
-        gl_FragColor = vec4(p*c, 1.3*mod(t, 2.0*abs(sin(t/2.0))));
+        float dflick = 1.3*mod(t, 2.0*abs(sin(t/2.0)));
+        gl_FragColor = vec4(p*c, dflick);
       }`,
     vert: glsl`
       precision mediump float;
@@ -995,8 +996,11 @@ function drawGrid () {
 				),4.0);
         float flick = 0.5*0.4*sin(time*32.0) + 0.5*sin(time*2.0) + 1.0;
         flick = step(0.8, flick);
+        float dflick = 1.3*mod(time, 2.0*abs(sin(time/2.0)));
 				vec4 c = vec4(hsl2rgb(h,1.0,l*0.5), l);
-        c += vec4(1,0,0,1)*(1.0-smoothstep(0.0, 0.9, length(vpos + vec2(0.5, 0.6))));
+        //c += vec4(1,0,0,1)*(1.0-smoothstep(0.0, 0.9, length(vpos + vec2(0.5, 0.6))));
+        c += vec4(1.0,1.0,0.5,0.1)*(1.0-smoothstep(0.0, 0.15, length(vpos + vec2(0.25, 0.83))))*dflick;
+        c += vec4(0.5,0.5,1.0,0.1)*(1.0-smoothstep(0.0, 0.13, length(vpos + vec2(0.08, 0.85))))*dflick;
         c += vec4(0,1,1,1)*(1.0-smoothstep(0.0, 0.4,
         length(vpos-vec2(-0.5,0.9))))*flick;
 				gl_FragColor = c;
