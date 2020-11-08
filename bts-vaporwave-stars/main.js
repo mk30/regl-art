@@ -26,6 +26,11 @@ require('resl')({
       src: './assets/seagull.json',
       parser: JSON.parse
     },
+    garbage: {
+      type: 'text',
+      src: './assets/garbageset.json',
+      parser: JSON.parse
+    },
     cube: {
       type: 'text',
       src: './assets/cube.json',
@@ -100,6 +105,7 @@ require('resl')({
       teapot: drawTeapot(),
       neon: neon(regl),
       seagull: seagull(regl, assets.seagull),
+      garbage: garbage(regl, assets.garbage),
       cube: cube(regl, assets.cube),
       wall: wall(regl),
       grid: drawGrid(),
@@ -137,6 +143,11 @@ require('resl')({
       {
         model: new Float32Array(16)
       },
+      {
+        model: new Float32Array(16)
+      }
+    ]
+    var garbageProps = [
       {
         model: new Float32Array(16)
       }
@@ -183,6 +194,12 @@ require('resl')({
         mat4.rotateZ(s, s, 0.4*Math.sin(time))
         //mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
         draw.seagull(seagullProps)
+        var g = garbageProps[0].model
+        mat4.identity(g)
+        mat4.scale(g, g, [0.6,0.6,0.6])
+        mat4.translate(g, g, [0,-10,-38])
+        mat4.rotateY(g,g,-Math.PI/4)
+        draw.garbage(garbageProps)
         var c = cubeProps[0].model
         mat4.identity(c)
         mat4.translate(c, c, [-20, -1, -20])
@@ -365,6 +382,54 @@ function seagull (regl, mesh){
   })
 }
 
+function garbage (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos,t))+0.3);
+        float c = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
+        gl_FragColor = vec4(p*c, 1.3*mod(t, 2.0*abs(sin(t/2.0))));
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: regl.prop('model')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
 function cube (regl, mesh){
   return regl({
     frag: glsl`
@@ -410,7 +475,7 @@ function cube (regl, mesh){
       enable: true,
       func: { src: 'src alpha', dst: 'one minus src alpha' }
     },
-    cull: { enable: true }
+    cull: { enable: false }
   })
 }
 
