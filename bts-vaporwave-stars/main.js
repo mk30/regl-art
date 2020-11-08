@@ -27,9 +27,14 @@ require('resl')({
       src: './assets/seagull.json',
       parser: JSON.parse
     },
-    garbage: {
+    dumpster: {
       type: 'text',
-      src: './assets/garbageset.json',
+      src: './assets/dumpster.json',
+      parser: JSON.parse
+    },
+    pallets: {
+      type: 'text',
+      src: './assets/pallets.json',
       parser: JSON.parse
     },
     houseruins: {
@@ -37,12 +42,17 @@ require('resl')({
       src: './assets/houseruins.json',
       parser: JSON.parse
     },
+    ac: {
+      type: 'text',
+      src: './assets/ac.json',
+      parser: JSON.parse
+    },
     cube: {
       type: 'text',
       src: './assets/cube.json',
       parser: JSON.parse
     },
-    texture0: {
+    bamboo: {
       type: 'image',
       src: './assets/bamboo.png',
       stream: true,
@@ -121,6 +131,16 @@ require('resl')({
         mag: 'linear',
         min: 'linear'
       })
+    },
+    aposcene: {
+      type: 'image',
+      src: './assets/aposcene2.png',
+      stream: true,
+      parser: (data) => regl.texture({
+        data: data,
+        mag: 'linear',
+        min: 'linear'
+      })
     }
   },
   onDone: (assets) => {
@@ -131,8 +151,10 @@ require('resl')({
       teapot: drawTeapot(),
       neon: neon(regl),
       seagull: seagull(regl, assets.seagull),
-      garbage: garbage(regl, assets.garbage),
+      dumpster: dumpster(regl, assets.dumpster),
+      pallets: pallets(regl, assets.pallets),
       houseruins: houseruins(regl, assets.houseruins),
+      ac: ac(regl, assets.ac),
       cube: cube(regl, assets.cube),
       redWall: redWall(regl),
       wall: wall(regl),
@@ -142,7 +164,7 @@ require('resl')({
     }
     var vidProps = [
       {
-        texture: assets.texture0,
+        texture: assets.bamboo,
         model: new Float32Array(16)
       }
     ]
@@ -168,6 +190,10 @@ require('resl')({
       {
         texture: assets.brokenwall,
         model: new Float32Array(16)
+      },
+      {
+        texture: assets.aposcene,
+        model: new Float32Array(16)
       }
     ]
     /*
@@ -186,12 +212,22 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
-    var garbageProps = [
+    var dumpsterProps = [
+      {
+        model: new Float32Array(16)
+      }
+    ]
+    var palletProps = [
       {
         model: new Float32Array(16)
       }
     ]
     var houseruinsProps = [
+      {
+        model: new Float32Array(16)
+      }
+    ]
+    var acProps = [
       {
         model: new Float32Array(16)
       }
@@ -249,18 +285,30 @@ require('resl')({
         mat4.rotateZ(s, s, 0.4*Math.sin(time))
         //mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
         draw.seagull(seagullProps)
-        var g = garbageProps[0].model
-        mat4.identity(g)
-        mat4.scale(g, g, [0.6,0.6,0.6])
-        mat4.translate(g, g, [0,-10,-38])
-        mat4.rotateY(g,g,-Math.PI/4)
-        draw.garbage(garbageProps)
+        var p = palletProps[0].model
+        mat4.identity(p)
+        mat4.scale(p, p, [0.4,0.4,0.4])
+        mat4.translate(p, p, [-5,-15,-63])
+        mat4.rotateY(p, p, Math.PI/5)
+        draw.pallets(palletProps)
+        var d = dumpsterProps[0].model
+        mat4.identity(d)
+        mat4.scale(d, d, [0.4,0.4,0.4])
+        mat4.translate(d, d, [-17,-15,-58])
+        mat4.rotateY(d,d,-Math.PI/5)
+        draw.dumpster(dumpsterProps)
         var h = houseruinsProps[0].model
         mat4.identity(h)
         mat4.translate(h, h, [-10,6,30])
         mat4.scale(h, h, [7,7,7])
         mat4.rotateY(h, h, -Math.PI/2)
         draw.houseruins(houseruinsProps)
+        var ac = acProps[0].model
+        mat4.identity(ac)
+        mat4.scale(ac, ac, [0.3,0.3,0.3])
+        mat4.translate(ac, ac, [-25,-20,-65])
+        //mat4.rotateY(ac, ac, -Math.PI/2)
+        draw.ac(acProps)
         var c = cubeProps[0].model
         mat4.identity(c)
         mat4.translate(c, c, [-20, -1, -20])
@@ -288,6 +336,13 @@ require('resl')({
         mat4.scale(rw, rw, [2.5, 2.0, 2.0])
         mat4.translate(rw, rw, [-12,3,-8])
         draw.redWall(redWallProps)
+        /*
+        var w = wallProps[3].model
+        mat4.identity(w)
+        mat4.translate(w, w, [15, 3, -30])
+        mat4.scale(w, w, [2,1,2])
+        mat4.rotateY(w, w, Math.PI/2)
+        */
         var w = wallProps[0].model
         mat4.identity(w)
         mat4.scale(w, w, [1.0, 1.0, 1.5])
@@ -452,7 +507,55 @@ function seagull (regl, mesh){
   })
 }
 
-function garbage (regl, mesh){
+function dumpster (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos,t))+0.3);
+        float c = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
+        gl_FragColor = vec4(p*c, 1.3*mod(t, 2.0*abs(sin(t/2.0))));
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: regl.prop('model')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
+function pallets (regl, mesh){
   return regl({
     frag: glsl`
       precision mediump float;
@@ -501,6 +604,54 @@ function garbage (regl, mesh){
 }
 
 function houseruins (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal+(snoise(vec4(vpos,t/8.0))+0.3);
+        float c = abs(max(
+          max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
+          sin(p.x*10.0)
+          ));
+        //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
+        gl_FragColor = vec4(p*c, 1.0);
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: regl.prop('model')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
+function ac (regl, mesh){
   return regl({
     frag: glsl`
       precision mediump float;
