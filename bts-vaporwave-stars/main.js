@@ -637,19 +637,27 @@ function dino (regl, mesh){
         //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
         float dflick = 1.3*mod(t, 2.0*abs(sin(t/2.0)));
         //gl_FragColor = vec4(p*c, dflick);
-        gl_FragColor = vec4(p*c, 2.0*abs(sin(t)+0.8));
+        //gl_FragColor = vec4(p*c, 2.0*abs(sin(t)+0.8));
+        gl_FragColor = vec4(p*c, 1.0);
       }`,
     vert: glsl`
       precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/3d')
       uniform mat4 model, projection, view;
       attribute vec3 position, normal;
-      varying vec3 vnormal, vpos;
+      varying vec3 vnormal, vpos, dvpos;
       uniform float t;
       void main () {
         vnormal = normal;
         vpos = position;
+        dvpos = position;
+        float h = min(pow(abs(((position.y/0.5)+5.0)*0.2),2.0), 0.1);
+        float top = pow(max(dot(vec3(0,1,0),normal),0.0),8.0);
+        //float dy = abs(snoise(0.5*position+0.0*sin(0.2*t-h)+vec3(0,0,t))*h*top);
+        float dy = abs(snoise(position+sin(0.2*t-h))*h*top);
+        dvpos = position + 40.0*vec3(0,dy,0);
         gl_Position = projection * view * model *
-        vec4(position, 1.0);
+        vec4(dvpos, 1.0);
       }`,
     attributes: {
       position: mesh.positions,
