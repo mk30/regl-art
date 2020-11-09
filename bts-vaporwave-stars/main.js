@@ -37,6 +37,11 @@ require('resl')({
       src: './assets/pallets.json',
       parser: JSON.parse
     },
+    dino: {
+      type: 'text',
+      src: './assets/apatosaur.json',
+      parser: JSON.parse
+    },
     houseruins: {
       type: 'text',
       src: './assets/houseruins.json',
@@ -153,6 +158,7 @@ require('resl')({
       seagull: seagull(regl, assets.seagull),
       dumpster: dumpster(regl, assets.dumpster),
       pallets: pallets(regl, assets.pallets),
+      dino: dino(regl, assets.dino),
       houseruins: houseruins(regl, assets.houseruins),
       ac: ac(regl, assets.ac),
       cube: cube(regl, assets.cube),
@@ -218,6 +224,11 @@ require('resl')({
       }
     ]
     var palletProps = [
+      {
+        model: new Float32Array(16)
+      }
+    ]
+    var dinoProps = [
       {
         model: new Float32Array(16)
       }
@@ -297,6 +308,12 @@ require('resl')({
         mat4.translate(d, d, [-17,-16,-58])
         mat4.rotateY(d,d,-Math.PI/5)
         draw.dumpster(dumpsterProps)
+        var di = dinoProps[0].model
+        mat4.identity(di)
+        mat4.scale(di, di, [5,5,5])
+        mat4.translate(di, di, [5,0,-5])
+        mat4.rotateY(di,di,-Math.PI/3)
+        draw.dino(dinoProps)
         var h = houseruinsProps[0].model
         mat4.identity(h)
         mat4.translate(h, h, [-10,6,30])
@@ -571,6 +588,56 @@ function pallets (regl, mesh){
           ));
         //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
         gl_FragColor = vec4(p*c, 1.3*mod(t, 2.0*abs(sin(t/2.0))));
+      }`,
+    vert: glsl`
+      precision mediump float;
+      uniform mat4 model, projection, view;
+      attribute vec3 position, normal;
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vnormal = normal;
+        vpos = position;
+        gl_Position = projection * view * model *
+        vec4(position, 1.0);
+      }`,
+    attributes: {
+      position: mesh.positions,
+      normal: anormals(mesh.cells, mesh.positions)
+    },
+    elements: mesh.cells,
+    uniforms: {
+      t: function(context, props){
+           return context.time
+         },
+      model: regl.prop('model')
+    },
+    primitive: "triangles",
+    blend: {
+      enable: true,
+      func: { src: 'src alpha', dst: 'one minus src alpha' }
+    },
+    cull: { enable: true }
+  })
+}
+
+function dino (regl, mesh){
+  return regl({
+    frag: glsl`
+      precision mediump float;
+      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+      varying vec3 vnormal, vpos;
+      uniform float t;
+      void main () {
+        vec3 p = vnormal-(snoise(vec4(vpos,t/8.0))-0.3);
+        float c = abs(max(
+          min(sin(p.z*10.0+10.0*p.y), sin(p.z*10.0)),
+          sin(p.x*20.0)
+          ));
+        //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
+        float dflick = 1.3*mod(t, 2.0*abs(sin(t/2.0)));
+        //gl_FragColor = vec4(p*c, dflick);
+        gl_FragColor = vec4(p*c, 2.0*abs(sin(t)+0.8));
       }`,
     vert: glsl`
       precision mediump float;
