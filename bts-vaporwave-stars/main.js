@@ -231,7 +231,8 @@ require('resl')({
     ]
     var dinoProps = [
       {
-        model: new Float32Array(16)
+        model: new Float32Array(16),
+        mouseover: 0
       }
     ]
     var houseruinsProps = [
@@ -266,7 +267,8 @@ require('resl')({
     ]
     var fb = regl.framebuffer()
     dinoProps[0].fb = fb
-    window.addEventListener('click', function(ev){
+    function pick (ev) {
+      var data
       fb.resize(window.innerWidth, window.innerHeight)
       fb.use(function(){
         regl.clear({
@@ -277,19 +279,31 @@ require('resl')({
         cameraUniforms(function () {
           console.log(dinoProps)
           draw.dinoPick(dinoProps)
-          var data = regl.read({
+          data = regl.read({
             framebuffer: fb,
             x: Math.max(0,Math.min(window.innerWidth-1,ev.offsetX)),
             y: Math.max(0,Math.min(window.innerHeight-1,window.innerHeight-ev.offsetY)),
             width: 1,
             height: 1
           })
-          console.log(data) 
-          if (data[0] === 255) {
-            location.href = 'https://kitties.neocities.org/'
-          }
         })
       })
+      return data
+    }
+    window.addEventListener('click', function(ev){
+      var data = pick(ev)
+      if (data[0] === 255) {
+        location.href = 'https://kitties.neocities.org/'
+      }
+    })
+    window.addEventListener('mousemove', function(ev){
+      var data = pick(ev)
+      console.log(data) 
+      if (data[0] === 255) {
+        dinoProps[0].mouseover = 1
+        window.status = 'https://kitties.neocities.org/'
+      }
+      else dinoProps[0].mouseover = 0
     })
     function update (time) {
       var r = riverProps[0].model
@@ -679,10 +693,9 @@ function dino (regl, mesh){
     },
     elements: mesh.cells,
     uniforms: {
-      t: function(context, props){
-           return context.time
-         },
-      model: regl.prop('model')
+      t: regl.context('time'),
+      model: regl.prop('model'),
+      mouseover: regl.prop('mouseover')
     },
     primitive: "triangles"
   }
@@ -692,17 +705,14 @@ function dino (regl, mesh){
         precision mediump float;
         #pragma glslify: snoise = require('glsl-noise/simplex/4d')
         varying vec3 vnormal, vpos;
-        uniform float t;
+        uniform float t, mouseover;
         void main () {
           vec3 p = vnormal-(snoise(vec4(vpos,t/8.0))-0.3);
           float c = abs(max(
             min(sin(p.z*10.0+10.0*p.y), sin(p.z*10.0)),
             sin(p.x*20.0)
             ));
-          //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
-          float dflick = 1.3*mod(t, 2.0*abs(sin(t/2.0)));
-          //gl_FragColor = vec4(p*c, dflick);
-          //gl_FragColor = vec4(p*c, 2.0*abs(sin(t)+0.8));
+          p = mix(p, vec3(0,0,1), mouseover);
           gl_FragColor = vec4(p*c, 1.0);
         }`,
       blend: {
