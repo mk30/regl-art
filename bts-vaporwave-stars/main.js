@@ -158,7 +158,8 @@ require('resl')({
       seagull: seagull(regl, assets.seagull),
       dumpster: dumpster(regl, assets.dumpster),
       pallets: pallets(regl, assets.pallets),
-      dino: dino(regl, assets.dino),
+      dino: dino(regl, assets.dino).draw,
+      dinoPick: dino(regl, assets.dino).pick,
       houseruins: houseruins(regl, assets.houseruins),
       ac: ac(regl, assets.ac),
       cube: cube(regl, assets.cube),
@@ -263,6 +264,132 @@ require('resl')({
         model: new Float32Array(16)
       }
     ]
+    var fb = regl.framebuffer()
+    dinoProps[0].fb = fb
+    window.addEventListener('click', function(ev){
+      fb.resize(window.innerWidth, window.innerHeight)
+      fb.use(function(){
+        regl.clear({
+          framebuffer: fb,
+          color: [0,0,0,1],
+          depth: true
+        })
+        cameraUniforms(function () {
+          console.log(dinoProps)
+          draw.dinoPick(dinoProps)
+          var data = regl.read({
+            framebuffer: fb,
+            x: Math.max(0,Math.min(window.innerWidth-1,ev.offsetX)),
+            y: Math.max(0,Math.min(window.innerHeight-1,window.innerHeight-ev.offsetY)),
+            width: 1,
+            height: 1
+          })
+          console.log(data) 
+          if (data[0] === 255) {
+            location.href = 'https://kitties.neocities.org/'
+          }
+        })
+      })
+    })
+    function update (time) {
+      var r = riverProps[0].model
+      mat4.identity(r)
+      mat4.translate(r, r, [-32,-6,-2])
+      mat4.rotateZ(r, r, Math.PI/2)
+      var n = neonProps.model
+      mat4.identity(n)
+      mat4.rotateY(n, n, Math.PI/2)
+      mat4.translate(n, n, [18, 16, -15])
+      mat4.scale(n, n, [5,5,5])
+      var s = seagullProps[0].model
+      mat4.identity(s)
+      mat4.scale(s, s,[5,5,5])
+      mat4.rotateY(s, s, -time)
+      mat4.rotateZ(s, s, 0.3*Math.sin(time*2))
+      mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
+      s = seagullProps[1].model
+      mat4.identity(s)
+      mat4.scale(s, s,[5,5,5])
+      mat4.rotateY(s, s, Math.PI)
+      mat4.translate(s, s, [2, 0, 0])
+      mat4.rotateY(s, s, -time)
+      mat4.rotateZ(s, s, 0.4*Math.sin(time))
+      //mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
+      var p = palletProps[0].model
+      mat4.identity(p)
+      mat4.scale(p, p, [0.4,0.4,0.4])
+      mat4.translate(p, p, [-5,-16,-63])
+      mat4.rotateY(p, p, Math.PI/5)
+      var d = dumpsterProps[0].model
+      mat4.identity(d)
+      mat4.scale(d, d, [0.4,0.4,0.4])
+      mat4.translate(d, d, [-17,-16,-58])
+      mat4.rotateY(d,d,-Math.PI/5)
+      var di = dinoProps[0].model
+      mat4.identity(di)
+      mat4.scale(di, di, [5,5,5])
+      mat4.translate(di, di, [5,0,-5])
+      mat4.rotateY(di, di, -Math.PI/3)
+      var h = houseruinsProps[0].model
+      mat4.identity(h)
+      mat4.translate(h, h, [-10,6,30])
+      mat4.scale(h, h, [7,7,7])
+      mat4.rotateY(h, h, -Math.PI/2)
+      var ac = acProps[0].model
+      mat4.identity(ac)
+      mat4.scale(ac, ac, [0.3,0.3,0.3])
+      mat4.translate(ac, ac, [-25,-20,-65])
+      //mat4.rotateY(ac, ac, -Math.PI/2)
+      var c = cubeProps[0].model
+      mat4.identity(c)
+      mat4.translate(c, c, [-20, -1, -20])
+      //mat4.rotateY(c, c, Math.PI/6)
+      mat4.scale(c, c, [15,10,20])
+      var c1 = cubeProps[1].model
+      mat4.identity(c1)
+      mat4.translate(c1, c1, [22, -1, 20])
+      mat4.rotateY(c, c, Math.PI/2)
+      mat4.scale(c1, c1, [15,10,10])
+      var c2 = cubeProps[2].model
+      mat4.identity(c2)
+      mat4.translate(c2, c2, [7, 4, 22])
+      mat4.rotateY(c, c, Math.PI/2)
+      mat4.scale(c2, c2, [15,20,10])
+      var rw = redWallProps[0].model
+      mat4.identity(rw)
+      mat4.scale(rw, rw, [2.0, 2.0, 2.0])
+      mat4.translate(rw, rw, [-8,3,-15])
+      mat4.rotateY(rw, rw, Math.PI/2)
+      rw = redWallProps[1].model
+      mat4.identity(rw)
+      mat4.scale(rw, rw, [2.5, 2.0, 2.0])
+      mat4.translate(rw, rw, [-12,3,-8])
+      /*
+      var w = wallProps[3].model
+      mat4.identity(w)
+      mat4.translate(w, w, [15, 3, -30])
+      mat4.scale(w, w, [2,1,2])
+      mat4.rotateY(w, w, Math.PI/2)
+      */
+      var w = wallProps[0].model
+      mat4.identity(w)
+      mat4.scale(w, w, [1.0, 1.0, 1.5])
+      mat4.rotateY(w, w, Math.PI/2)
+      mat4.translate(w, w, [-19,0,-7])
+      var w = wallProps[1].model
+      mat4.identity(w)
+      mat4.scale(w, w, [0.8, 0.8, 0.8])
+      mat4.rotateY(w, w, Math.PI/2)
+      mat4.translate(w, w, [-35,2,-20])
+      w = wallProps[2].model
+      mat4.identity(w)
+      mat4.translate(w, w, [-30,0,5])
+      var m = vidProps[0].model
+      mat4.identity(m)
+      mat4.scale(m, m, [0.8, 0.8, 0.8])
+      mat4.rotateY(m, m, Math.PI/2)
+      mat4.translate(m, m, [-35,2,-20])
+    }
     regl.frame(function ({ time }) {
       regl.clear({ color: [0,0,0,1], depth: true })
       draw.bg()
@@ -270,115 +397,19 @@ require('resl')({
         //draw.blob(blobs)
         //draw.creature(creatures)
         //draw.teapot(teapots)
-        var r = riverProps[0].model
-        mat4.identity(r)
-        mat4.translate(r, r, [-32,-6,-2])
-        mat4.rotateZ(r, r, Math.PI/2)
+        update(time)
         draw.river(riverProps)
-        var n = neonProps.model
-        mat4.identity(n)
-        mat4.rotateY(n, n, Math.PI/2)
-        mat4.translate(n, n, [18, 16, -15])
-        mat4.scale(n, n, [5,5,5])
         draw.neon(neonProps)
-        var s = seagullProps[0].model
-        mat4.identity(s)
-        mat4.scale(s, s,[5,5,5])
-        mat4.rotateY(s, s, -time)
-        mat4.rotateZ(s, s, 0.3*Math.sin(time*2))
-        mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
-        s = seagullProps[1].model
-        mat4.identity(s)
-        mat4.scale(s, s,[5,5,5])
-        mat4.rotateY(s, s, Math.PI)
-        mat4.translate(s, s, [2, 0, 0])
-        mat4.rotateY(s, s, -time)
-        mat4.rotateZ(s, s, 0.4*Math.sin(time))
-        //mat4.translate(s, s, [0, 0.4*Math.sin(time*2),0])
         draw.seagull(seagullProps)
-        var p = palletProps[0].model
-        mat4.identity(p)
-        mat4.scale(p, p, [0.4,0.4,0.4])
-        mat4.translate(p, p, [-5,-16,-63])
-        mat4.rotateY(p, p, Math.PI/5)
         draw.pallets(palletProps)
-        var d = dumpsterProps[0].model
-        mat4.identity(d)
-        mat4.scale(d, d, [0.4,0.4,0.4])
-        mat4.translate(d, d, [-17,-16,-58])
-        mat4.rotateY(d,d,-Math.PI/5)
         draw.dumpster(dumpsterProps)
-        var di = dinoProps[0].model
-        mat4.identity(di)
-        mat4.scale(di, di, [5,5,5])
-        mat4.translate(di, di, [5,0,-5])
-        mat4.rotateY(di,di,-Math.PI/3)
         draw.dino(dinoProps)
-        var h = houseruinsProps[0].model
-        mat4.identity(h)
-        mat4.translate(h, h, [-10,6,30])
-        mat4.scale(h, h, [7,7,7])
-        mat4.rotateY(h, h, -Math.PI/2)
         draw.houseruins(houseruinsProps)
-        var ac = acProps[0].model
-        mat4.identity(ac)
-        mat4.scale(ac, ac, [0.3,0.3,0.3])
-        mat4.translate(ac, ac, [-25,-20,-65])
-        //mat4.rotateY(ac, ac, -Math.PI/2)
         draw.ac(acProps)
-        var c = cubeProps[0].model
-        mat4.identity(c)
-        mat4.translate(c, c, [-20, -1, -20])
-        //mat4.rotateY(c, c, Math.PI/6)
-        mat4.scale(c, c, [15,10,20])
-        var c1 = cubeProps[1].model
-        mat4.identity(c1)
-        mat4.translate(c1, c1, [22, -1, 20])
-        mat4.rotateY(c, c, Math.PI/2)
-        mat4.scale(c1, c1, [15,10,10])
-        var c2 = cubeProps[2].model
-        mat4.identity(c2)
-        mat4.translate(c2, c2, [7, 4, 22])
-        mat4.rotateY(c, c, Math.PI/2)
-        mat4.scale(c2, c2, [15,20,10])
         draw.cube(cubeProps)
         draw.grid()
-        var rw = redWallProps[0].model
-        mat4.identity(rw)
-        mat4.scale(rw, rw, [2.0, 2.0, 2.0])
-        mat4.translate(rw, rw, [-8,3,-15])
-        mat4.rotateY(rw, rw, Math.PI/2)
-        rw = redWallProps[1].model
-        mat4.identity(rw)
-        mat4.scale(rw, rw, [2.5, 2.0, 2.0])
-        mat4.translate(rw, rw, [-12,3,-8])
         draw.redWall(redWallProps)
-        /*
-        var w = wallProps[3].model
-        mat4.identity(w)
-        mat4.translate(w, w, [15, 3, -30])
-        mat4.scale(w, w, [2,1,2])
-        mat4.rotateY(w, w, Math.PI/2)
-        */
-        var w = wallProps[0].model
-        mat4.identity(w)
-        mat4.scale(w, w, [1.0, 1.0, 1.5])
-        mat4.rotateY(w, w, Math.PI/2)
-        mat4.translate(w, w, [-19,0,-7])
-        var w = wallProps[1].model
-        mat4.identity(w)
-        mat4.scale(w, w, [0.8, 0.8, 0.8])
-        mat4.rotateY(w, w, Math.PI/2)
-        mat4.translate(w, w, [-35,2,-20])
-        w = wallProps[2].model
-        mat4.identity(w)
-        mat4.translate(w, w, [-30,0,5])
         draw.wall(wallProps)
-        var m = vidProps[0].model
-        mat4.identity(m)
-        mat4.scale(m, m, [0.8, 0.8, 0.8])
-        mat4.rotateY(m, m, Math.PI/2)
-        mat4.translate(m, m, [-35,2,-20])
         draw.vidwindow(vidProps)
       })
       camera.update()
@@ -622,24 +653,7 @@ function pallets (regl, mesh){
 }
 
 function dino (regl, mesh){
-  return regl({
-    frag: glsl`
-      precision mediump float;
-      #pragma glslify: snoise = require('glsl-noise/simplex/4d')
-      varying vec3 vnormal, vpos;
-      uniform float t;
-      void main () {
-        vec3 p = vnormal-(snoise(vec4(vpos,t/8.0))-0.3);
-        float c = abs(max(
-          min(sin(p.z*10.0+10.0*p.y), sin(p.z*10.0)),
-          sin(p.x*20.0)
-          ));
-        //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
-        float dflick = 1.3*mod(t, 2.0*abs(sin(t/2.0)));
-        //gl_FragColor = vec4(p*c, dflick);
-        //gl_FragColor = vec4(p*c, 2.0*abs(sin(t)+0.8));
-        gl_FragColor = vec4(p*c, 1.0);
-      }`,
+  var opts = {
     vert: glsl`
       precision mediump float;
       #pragma glslify: snoise = require('glsl-noise/simplex/3d')
@@ -670,13 +684,42 @@ function dino (regl, mesh){
          },
       model: regl.prop('model')
     },
-    primitive: "triangles",
-    blend: {
-      enable: true,
-      func: { src: 'src alpha', dst: 'one minus src alpha' }
-    },
-    cull: { enable: true }
-  })
+    primitive: "triangles"
+  }
+  return {
+    draw: regl(Object.assign({}, opts, {
+      frag: glsl`
+        precision mediump float;
+        #pragma glslify: snoise = require('glsl-noise/simplex/4d')
+        varying vec3 vnormal, vpos;
+        uniform float t;
+        void main () {
+          vec3 p = vnormal-(snoise(vec4(vpos,t/8.0))-0.3);
+          float c = abs(max(
+            min(sin(p.z*10.0+10.0*p.y), sin(p.z*10.0)),
+            sin(p.x*20.0)
+            ));
+          //gl_FragColor = vec4(p*c, step(1.0,mod(t, 2.0)));
+          float dflick = 1.3*mod(t, 2.0*abs(sin(t/2.0)));
+          //gl_FragColor = vec4(p*c, dflick);
+          //gl_FragColor = vec4(p*c, 2.0*abs(sin(t)+0.8));
+          gl_FragColor = vec4(p*c, 1.0);
+        }`,
+      blend: {
+        enable: true,
+        func: { src: 'src alpha', dst: 'one minus src alpha' }
+      },
+      cull: { enable: true }
+    })),
+    pick: regl(Object.assign({}, opts, {
+      framebuffer: regl.prop('fb'),
+      frag: `
+        precision mediump float;
+        void main () {
+          gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+        }`,
+    }))
+  }
 }
 
 function houseruins (regl, mesh){
@@ -1399,3 +1442,4 @@ for (var i = 0; i < 50; i++) {
   var z = (Math.random()*2-1)*100
   creatures.push({ offset: [x,y,z], iobj: i+1 })
 }
+
