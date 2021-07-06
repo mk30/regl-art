@@ -3,12 +3,7 @@ var regl = require('regl')({ extensions: ['oes_element_index_uint'] })
 var glsl = require('glslify')
 var normals = require('angle-normals')
 var planeMesh = require("grid-mesh")(300, 60)
-/*
-var camera = require('./lib/camera.js')({ distance: 25, theta: -1.57, phi: 0,
-  width: window.innerWidth, height: window.innerHeight
-})
-*/
-var camera = require('./lib/james-cam.js')({
+var camera = require('./lib/cam.js')({
   width: window.innerWidth,
   height: window.innerHeight
 })
@@ -82,8 +77,6 @@ function roof (regl) {
     uniforms: {
       time: regl.context('time'),
       location: regl.prop('location'),
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     elements: planeMesh.cells
   })
@@ -135,8 +128,6 @@ function fromMesh (mesh) {
       },
       time: regl.context('time'),
       location: regl.prop('location'),
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     elements: mesh.cells
   })
@@ -183,8 +174,6 @@ function floor (regl) {
     uniforms: {
       time: regl.context('time'),
       location: regl.prop('location'),
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     elements: planeMesh.cells
   })
@@ -228,16 +217,12 @@ function dolphin (regl, mesh){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, t/5.0)
         mat4.translate(rmat, rmat, [-55, 3, 18])
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateX(rmat, rmat, -t/2.0)
         mat4.rotateZ(rmat, rmat, t)
-        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -288,17 +273,11 @@ function beach (regl, mesh){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, t/5.0)
         mat4.translate(rmat, rmat, [-115, -8, 10])
         mat4.rotateY(rmat, rmat, Math.PI*0.8)
         mat4.scale(rmat, rmat,[1.3,1.3,1.3])
-        //mat4.rotateX(rmat, rmat, -t/2.0)
-        //mat4.rotateZ(rmat, rmat, t)
-        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "points",
     blend: {
@@ -349,17 +328,11 @@ function beachLines (regl, mesh){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, t/5.0)
         mat4.translate(rmat, rmat, [-115, -8, 10])
         mat4.rotateY(rmat, rmat, Math.PI*0.8)
         mat4.scale(rmat, rmat,[1.3,1.3,1.3])
-        //mat4.rotateX(rmat, rmat, -t/2.0)
-        //mat4.rotateZ(rmat, rmat, t)
-        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "lines",
     blend: {
@@ -378,7 +351,6 @@ function boy (regl, mesh){
       uniform float t;
       void main () {
         vec3 p = vnormal+(snoise(vec4(vpos*0.01,sin(t/20.0)))*0.1+0.7);
-        //vec3 p = vnormal+0.5/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
         float cross = abs(max(
           max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
           sin(p.x*10.0)
@@ -396,7 +368,6 @@ function boy (regl, mesh){
         vpos = position;
         gl_Position = projection * view * model *
         vec4(position, 1.0);
-        //gl_PointSize = 10.0*sin(t);
         gl_PointSize = 1.0*sin(t);
       }`,
     attributes: {
@@ -413,14 +384,9 @@ function boy (regl, mesh){
         mat4.identity(rmat)
         mat4.scale(rmat, rmat,[0.9,0.9,0.9])
         mat4.rotateY(rmat, rmat, 2.0)
-        //mat4.rotateY(rmat, rmat, t/5.0)
-        //mat4.rotateX(rmat, rmat, -t/2.0)
-        //mat4.rotateZ(rmat, rmat, t)
         mat4.translate(rmat, rmat, [0, -12, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -438,7 +404,6 @@ function boyPoints (regl, mesh){
       varying vec3 vnormal, vpos;
       uniform float t;
       void main () {
-        //vec3 p = vnormal+0.2/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5+0.3);
         vec3 p = vnormal+0.1/(snoise(vec4(vpos*0.01,sin(t)+20.5))*0.5-0.3);
         float cross = abs(max(
           max(sin(p.z*10.0+p.y), sin(p.y*01.0)),
@@ -457,7 +422,6 @@ function boyPoints (regl, mesh){
         vpos = position;
         gl_Position = projection * view * model *
         vec4(position, 1.0);
-        //gl_PointSize = 10.0*sin(t);
         gl_PointSize = 1.0+abs((sin(t)+0.1));
       }`,
     attributes: {
@@ -474,14 +438,9 @@ function boyPoints (regl, mesh){
         mat4.identity(rmat)
         mat4.scale(rmat, rmat,[0.9,0.9,0.9])
         mat4.rotateY(rmat, rmat, 2.0)
-        //mat4.rotateY(rmat, rmat, t/5.0)
-        //mat4.rotateX(rmat, rmat, -t/2.0)
-        //mat4.rotateZ(rmat, rmat, t)
         mat4.translate(rmat, rmat, [0, -12, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "points",
     blend: {
@@ -530,16 +489,12 @@ function crown (regl, mesh){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, t/5.0)
         mat4.translate(rmat, rmat, [-55, 3, 18])
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateX(rmat, rmat, -t/2.0)
         mat4.rotateZ(rmat, rmat, t)
-        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -588,16 +543,12 @@ function crownSuga (regl, mesh){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, t/5.0)
         mat4.translate(rmat, rmat, [-70, 9, -20])
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateY(rmat, rmat, t)
         mat4.rotateX(rmat, rmat, -Math.PI/2)
-        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -646,16 +597,11 @@ function cat (regl, mesh){
       model: function(context, props){
         var t = context.time
         mat4.identity(rmat)
-        //mat4.rotateY(rmat, rmat, t/5.0)
         mat4.translate(rmat, rmat, [-74+Math.sin(t/3.0), -9+Math.sin(t*10.0), -18+Math.random()])
         mat4.scale(rmat, rmat,[0.7,0.7,0.7])
         mat4.rotateY(rmat, rmat, Math.sin(t))
-        //mat4.rotateX(rmat, rmat, -Math.PI/2)
-        //mat4.translate(rmat, rmat, [0, 0, 12 + Math.cos(t/5)/2])
         return rmat
       },
-      //projection: regl.prop('projection'),
-      //view: regl.prop('view')
     },
     primitive: "triangles",
     blend: {
@@ -754,7 +700,7 @@ require('resl')({
   manifest: {
     singer: {
       type: 'text',
-      src: './assets/singersmsimplified1.json',
+      src: './assets/singersm.json',
       parser: JSON.parse
     },
     crown: {
@@ -774,7 +720,7 @@ require('resl')({
     },
     dolphin: {
       type: 'text',
-      src: './assets/golf.json',
+      src: './assets/dolphin.json',
       parser: JSON.parse
     },
     texture0: {
@@ -899,7 +845,6 @@ require('resl')({
         texture: assets.texture7,
         model: new Float32Array(16)
       },
-      //{ texture: assets.texture1 },
     ]
     regl.frame(function ({ time }) {
 			regl.clear({ color: [0.9,0.9,0.9,1] })
@@ -945,10 +890,7 @@ require('resl')({
         m = vidProps[5].model
         mat4.identity(m)
         mat4.translate(m, m, [-45, 0, -3])
-        //mat4.translate(m, m, [-82, 0, 0])
         mat4.scale(m, m, [1.0-Math.sin(time), 1.0-Math.sin(time), 0.8+0.5*Math.sin(time)])
-        //mat4.rotateY(m, m, -Math.PI/2)
-        //mat4.rotateY(m, m, time+1.5)
         m = vidProps[6].model
         mat4.identity(m)
         mat4.translate(m, m, [-0.5*Math.cos(time), 0.2*Math.sin(time*2), 0])
@@ -961,7 +903,6 @@ require('resl')({
         mat4.translate(m, m, [-0.5*Math.cos(time), 0.2*Math.sin(time*2), 0])
         mat4.translate(m, m, [-40, 0, 0])
         mat4.translate(m, m, [-100, 0, -5])
-        //mat4.rotateY(m, m, -Math.PI/2)
         mat4.scale(m, m, [1.4, 1.4, 1.4])
         draw.vidwindow(vidProps)
       })

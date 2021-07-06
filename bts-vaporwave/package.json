@@ -1,5 +1,5 @@
 {
-  "name": "cols",
+  "name": "bts-vaporwave",
   "version": "1.0.0",
   "description": "",
   "main": "main.js",
@@ -11,9 +11,7 @@
     "gl-vec3": "^1.0.3",
     "glsl-noise": "0.0.0",
     "grid-mesh": "^0.1.0",
-    "obj2sc": "^1.0.0",
     "regl": "^0.11.0",
-    "regl-camera": "^1.0.0",
     "resl": "^1.0.2"
   },
   "devDependencies": {},
