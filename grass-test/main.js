@@ -21,7 +21,7 @@ var planes = {
 var N = 20 
 for (var i=0; i<N; i++) {
   var n = planes.positions.length/3
-  var y = ((i/N)*2-1)*0.2
+  var y = ((i/N)*2-1)*0.2 + 0.5
   planes.positions.push(
     -1, y, -1,
     -1, y, +1,
@@ -35,7 +35,8 @@ var draw = {
   plane: plane(regl)
 }
 regl.frame(() => {
-  regl.clear({ color: [0.8,0.7,0.4,1], depth: true })
+  //regl.clear({ color: [0.8,0.7,0.4,1], depth: true })
+  regl.clear({ color: [0.0,0.0,0.0,1], depth: true })
   camera(() => {
     draw.plane(planes)
   })
@@ -49,11 +50,14 @@ function plane (regl) {
       uniform float time;
       varying vec3 vpos, vnormal;
       void main () {
-        float r = 0.9*(snoise(vec3(vpos.xz*10.0,time*0.3)));
-        float g = snoise(vec3(vpos.yz,time*0.5));
-        if (r>0.1) discard;
-        if (g>0.9) discard;
-        gl_FragColor = vec4(0.6+r, 0.3+g, 0.7, 1);
+        //float r = 0.9*(snoise(vec3(vpos.xz*10.0,time*0.3)));
+        //float g = snoise(vec3(vpos.yz,time*0.5));
+        float a = vpos.y * 0.5*(snoise(vec3(vpos.xz*100.0,time*0.5)));
+        //float y = vpos.y + (0.5*snoise(vec3(vpos.xz,time*0.2))+0.5);
+        //if (y>0.9) discard;
+        //if (r>0.1) discard;
+        //if (g>0.9) discard;
+        gl_FragColor = vec4(0.3, 0.7, 0.3, a);
       }
     `,
     vert: `
