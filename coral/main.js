@@ -1,5 +1,7 @@
 var glsl = require('glslify')
 var normals = require('angle-normals')
+var gridMesh = require('grid-mesh')(50, 50)
+var mat4 = require('gl-mat4')
 
 var regl = require('regl')({
   extensions: [
@@ -31,15 +33,28 @@ for (var i=0; i<N; i++) {
   planes.cells.push(n+0, n+1, n+2, n+0, n+2, n+3)
 }
 
+var gridModel = new Float32Array(16)
+mat4.identity(gridModel)
+
+var gridProps = [
+  {
+    location: [0,0,0],
+    model: gridModel
+  }
+]
+
 var draw = {
-  plane: plane(regl)
+  plane: plane(regl),
+  grid: createGrid(regl)
 }
 regl.frame(() => {
   regl.clear({ color: [0.8,0.7,0.4,1], depth: true })
   camera(() => {
-    draw.plane(planes)
+    //draw.plane(planes)
+    draw.grid(gridProps)
   })
 })
+
 
 function plane (regl) {
   return regl({
@@ -82,5 +97,45 @@ function plane (regl) {
       func: { src: 'src alpha', dst: 'one minus src alpha' },
       equation: { rgb: 'add', alpha: 'max' }
     }
+  })
+}
+
+function createGrid (regl) {
+  return regl({
+    frag: glsl`
+      precision highp float;
+			#pragma glslify: snoise = require('glsl-noise/simplex/3d')
+      uniform float time;
+      varying vec2 vpos;
+      void main () {
+        float x = step(mod(vpos.x, 1.0),0.5);
+        float y = step(mod(vpos.y, 1.0),0.5);
+        gl_FragColor = vec4(mod(x+y, 2.0), 0, 0, 1.0);
+      }
+    `,
+    vert: glsl`
+      precision highp float;
+      attribute vec2 position;
+      uniform vec3 location;
+      uniform mat4 projection, view, model;
+      varying vec2 vpos;
+      void main () {
+        vpos = position;
+        float x = position.x + location.x;
+        float y = 0.0 + location.y;
+        float z = position.y + location.z;
+        gl_Position = projection * view * model * vec4(x,y,z,1.0);
+      }
+    `,
+    uniforms: {
+      time: regl.context('time'),
+      model: regl.prop('model'),
+      location: regl.prop('location')
+    },
+    attributes: {
+      position: gridMesh.positions
+    },
+    elements: gridMesh.cells,
+    primitive: "triangles"
   })
 }
