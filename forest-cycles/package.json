@@ -1,0 +1,29 @@
+{
+  "name": "forest-cycles",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "angle-normals": "^1.0.0",
+    "choo": "^7.1.0",
+    "extrude-by-path": "^1.1.0",
+    "gl-mat4": "^1.1.4",
+    "gl-vec3": "^1.0.3",
+    "glsl-noise": "0.0.0",
+    "grid-mesh": "^0.1.0",
+    "hsl2rgb": "^0.1.1",
+    "obj2sc": "^1.0.0",
+    "regl": "^0.11.0",
+    "resl": "^1.0.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "budo main.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "browserify": {
+    "transform": "glslify"
+  }
+}
