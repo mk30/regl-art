@@ -363,20 +363,20 @@ require('resl')({
       var gr = grassProps[0].model
       mat4.identity(gr)
       mat4.translate(gr, gr, [0,-5,0])
-      //mat4.scale(gr, gr, [0.2,0.2,0.2])
+      mat4.scale(gr, gr, [0.2,0.2,0.2])
       //mat4.rotateY(ic, ic, -Math.PI/3)
       var gr1 = grassProps[1].model
       mat4.identity(gr1)
       mat4.translate(gr1, gr1, [4,-5,4])
-      //mat4.scale(gr1, gr1, [0.2,0.2,0.2])
+      mat4.scale(gr1, gr1, [0.2,0.2,0.2])
       var gr2 = grassProps[2].model
       mat4.identity(gr2)
       mat4.translate(gr2, gr2, [-4,-5,-4])
-      //mat4.scale(gr2, gr2, [0.2,0.2,0.2])
+      mat4.scale(gr2, gr2, [0.2,0.2,0.2])
       var gr3 = grassProps[3].model
       mat4.identity(gr3)
       mat4.translate(gr3, gr3, [4,-5,-4])
-      //mat4.scale(gr3, gr3, [0.2,0.2,0.2])
+      mat4.scale(gr3, gr3, [0.2,0.2,0.2])
       var h = houseruinsProps[0].model
       mat4.identity(h)
       mat4.translate(h, h, [-10,6,30])
@@ -805,7 +805,7 @@ function grass (regl, mesh){
             vec4(vec3(vpos*0.5-vec3(0,t*0.7,0)),t)
           );
           p = mix(p, vec3(0,0,1), mouseover);
-          gl_FragColor = vec4(p, 1.0);
+          gl_FragColor = vec4(0.1,p.y,0.0, 1.0);
         }`,
       blend: {
         enable: true,
