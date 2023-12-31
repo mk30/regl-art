@@ -1,0 +1,30 @@
+{
+  "name": "burn-barrel",
+  "version": "1.0.0",
+  "description": "",
+  "main": "burn-barrel.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "angle-normals": "file:../../../prefix/lib/node_modules/angle-normals",
+    "gl-mat4": "file:../../../prefix/lib/node_modules/gl-mat4",
+    "gl-quat": "^1.0.0",
+    "gl-vec3": "file:../../../prefix/lib/node_modules/gl-vec3",
+    "glsl-hsl2rgb": "^1.1.0",
+    "glsl-noise": "^0.0.0",
+    "glslify": "^7.1.1",
+    "grid-mesh": "^0.1.0",
+    "primitive-cylinder": "^1.0.3",
+    "regl": "file:../../../prefix/lib/node_modules/regl",
+    "regl-camera": "file:../../../prefix/lib/node_modules/regl-camera"
+  },
+  "scripts": {
+    "start": "budo burn-barrel.js"
+  },
+  "browserify": {
+    "transform": "glslify"
+  }
+}
